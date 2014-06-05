@@ -1,10 +1,5 @@
 package com.vim.exlauncher.ui;
 
-import org.json.JSONObject;
-
-import com.vim.exlauncher.R;
-import com.vim.exlauncher.data.HttpRequest;
-
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,6 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
+
+import com.vim.exlauncher.R;
 
 public class ImageButtonOnClickListener implements OnClickListener {
     private static final String TAG = "ImageButtonOnClickListener";
@@ -31,6 +28,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_drama:
+            intent.setComponent(new ComponentName("com.sharebox.Drama",
+                    "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 
         case R.id.ib_games:
@@ -40,6 +39,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_radio:
+            intent.setComponent(new ComponentName("com.sharebox.Radio",
+                    "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 
         case R.id.ib_setting:
@@ -48,6 +49,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_tv:
+            intent.setComponent(new ComponentName("com.sharebox.fitvLive",
+                    "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 
         case R.id.ib_youtube:

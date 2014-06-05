@@ -1,10 +1,13 @@
 package com.vim.exlauncher.data;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import java.io.PrintWriter;
 import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -14,42 +17,19 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
+import android.nfc.Tag;
 import android.text.TextUtils;
 import android.util.Log;
 
 public class HttpRequest {
     private static final String TAG = "HttpRequest";
-    
-    public static InputStream getUrlStream(String urlStrs){
-        if (TextUtils.isEmpty(urlStrs)){
-            Log.e(TAG, "[getUrlStream] url is empty!");
-            return null;
-        }
-        
-        InputStream is = null;
-        try {
-            URL url = new URL(urlStrs);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(5 * 1000);
-            conn.setRequestMethod("GET");
-            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                is = conn.getInputStream();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "[getUrlStream] exception when open " + urlStrs + "!");
-            e.printStackTrace();
-            is = null;
-        }
-        
-        return is;
-    }
 
     public static JSONObject getDataFromUrl(String url) {
         if (TextUtils.isEmpty(url)){
-            Log.e(TAG, "[getDataFromUrl] url must not be empty!");
+            Log.e(TAG, "[getDataFromUrl] url is empty!");
             return null;
         }
-        
+
         logd(url);
         url = url.replaceAll(" ","%20");
         logd(url);
@@ -80,16 +60,17 @@ public class HttpRequest {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "[getDataFromUrl] exception!");
+            Log.e(TAG, "[getDataFromUrl] error!");
             e.printStackTrace();
+            resultJsonObject = null;
         } finally {
             // 关闭连接 ,释放资源
             client.getConnectionManager().shutdown();
         }
-        
         return resultJsonObject;
     }
 
+    
     private static void logd(String strs){
         Log.d(TAG, strs + " --- VIM");
     }

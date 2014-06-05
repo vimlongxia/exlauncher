@@ -11,8 +11,9 @@ import android.util.Log;
 
 public class JsonAdData {
     private static final String TAG = "JsonData";
-    private JSONObject mJsonObj;
+
     private Context mContext;
+    private JSONObject mJsonObj;
 
     private String mDealerLogo;
     private String mName;
@@ -89,30 +90,29 @@ public class JsonAdData {
     public static final String CITY = "City";
 
     public JsonAdData(Context context, JSONObject jsonObj) {
-        mJsonObj = jsonObj;
         mContext = context;
+        mJsonObj = jsonObj;
     }
 
-    public void saveToSharedPref() {
+    private void saveAdDataToSharedPref() {
         SharedPreferences sp = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         Editor editor = sp.edit();
 
-        editor.putString(DEALER_LOGO, mDealerLogo);
-        editor.putString(MAC, mMac);
         editor.putString(BOTTOM_MSG, mBottomMsg);
-        editor.putString(COUNTRY, mCountry);
         editor.putString(CITY, mCity);
+        editor.putString(COUNTRY, mCountry);
+        editor.putString(DEALER_LOGO, mDealerLogo);
 
         editor.commit();
     }
 
-    public void parseAndSaveToSharedPref() {
+    public void parseAndSaveData() {
         if (mJsonObj == null) {
-            Log.e(TAG, "[parse] JSON object must not be empty!");
+            Log.e(TAG, "[parseAndSaveData] mJsonObj is null!");
             return;
         }
-
+        
         try {
             JSONArray userJsonArray = mJsonObj.getJSONArray(USERS);
             JSONObject userJsonObject = userJsonArray.getJSONObject(0);
@@ -159,12 +159,12 @@ public class JsonAdData {
             mPvadv3 = photAdJsonObejct.getString(PVADV3);
             mPvadv4 = photAdJsonObejct.getString(PVADV4);
         } catch (Exception e) {
-            Log.e(TAG, "parse error! don't save any thing.");
+            Log.e(TAG, "[parseAndSaveData] parse error! don't save any data here!");
             e.printStackTrace();
             return;
         }
-        
-        saveToSharedPref();
+
+        saveAdDataToSharedPref();
     }
 
     // public String getBottomMsg() {

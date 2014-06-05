@@ -11,6 +11,7 @@ import android.util.Log;
 
 public class JsonWeatherData {
     private static final String TAG = "JsonWeatherData";
+    
     private JSONObject mJsonObj;
     private Context mContext;
 
@@ -94,27 +95,30 @@ public class JsonWeatherData {
         mContext = context;
         mJsonObj = jsonObj;
     }
-
-    private void saveToSharedPref() {
+    
+    private void saveAdDataToSharedPref() {
         SharedPreferences sp = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         Editor editor = sp.edit();
 
         editor.putString(WEATHER_MAIN, mWeatherMain);
-        editor.putFloat(TEMP, (float) mTemp);
-        editor.putFloat(TEMP_MAX, (float) mTempMax);
-        editor.putFloat(TEMP_MIN, (float) mTempMin);
-        editor.putFloat(SPEED, (float) mSpeed);
+        editor.putString(ICON, mIcon);
+        editor.putFloat(TEMP, (float)mTemp);
+        editor.putFloat(TEMP_MAX, (float)mTempMax);
+        editor.putFloat(TEMP_MIN, (float)mTempMin);
+        editor.putFloat(SPEED, (float)mSpeed);
+        editor.putFloat(DEG, (float)mDeg);
 
         editor.commit();
     }
 
-    public void parseAndSaveToSharedPref() {
+
+    public void parseAndSaveData() {
         if (mJsonObj == null) {
-            Log.e(TAG, "[parse] JSON object must not be empty!");
+            Log.e(TAG, "[parseAndSaveData] mJsonObj is null!");
             return;
         }
-
+        
         try {
             mBase = mJsonObj.getString(BASE);
             mDt = mJsonObj.getLong(DT);
@@ -166,14 +170,37 @@ public class JsonWeatherData {
             JSONObject cloudsJsonObject = new JSONObject(cloudsJsonString);
             mAll = cloudsJsonObject.getInt(ALL);
         } catch (Exception e) {
-            Log.e(TAG, "parse error! don't save any thing here.");
+            Log.e(TAG, "[parseAndSaveData] parse error! don't save any data here!");
             e.printStackTrace();
             return;
         }
-
-        saveToSharedPref();
+        
+        saveAdDataToSharedPref();
     }
-
+    
+    // public String getWeatherMain(){
+    // return mWeatherMain;
+    // }
+    //
+    // public double getTemp (){
+    // return mTemp;
+    // }
+    //
+    //
+    // public double getTempMax (){
+    // return mTempMax;
+    // }
+    //
+    //
+    // public double getTempMin (){
+    // return mTempMin;
+    // }
+    //
+    //
+    // public double getSpeed (){
+    // return mSpeed;
+    // }
+    
     public String toString() {
         StringBuilder sb = new StringBuilder();
 

@@ -1,9 +1,11 @@
 package com.vim.exlauncher.ui;
 
 import java.io.File;
-import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.json.JSONObject;
 
@@ -15,7 +17,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.Paint;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -39,6 +41,7 @@ import com.vim.exlauncher.data.HttpRequest;
 import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
 import com.vim.exlauncher.data.LauncherUtils;
+import com.vim.exlauncher.data.Weather;
 
 public class ExLauncher extends Activity {
     private static final String TAG = "ExLauncher";
@@ -88,16 +91,16 @@ public class ExLauncher extends Activity {
 
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/userinfo.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather";
-
     private static final String LOGO_NAME = "logo.png";
 
     private JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
     private Bitmap mLogoBitmap;
-    private boolean mFirstGetLogo = true;
     private SharedPreferences mSharedPreferences;
-
+    private boolean mFirstGetLogo = true;
     private DataHandler mDataHandler;
+    private Weather mWeather;
+
     private static final int MSG_DATA_QUIT = 0;
     private static final int MSG_DATA_GET_JSON = 1;
     private static final int MSG_DATA_GET_LOGO = 2;
@@ -130,12 +133,11 @@ public class ExLauncher extends Activity {
     private static final int MSG_UI_UPDATE_LOGO = 2;
     private static final int MSG_UI_UPDATE_RIGHT_SIDE = 3;
     private Handler mUiHandler = new Handler() {
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
             case MSG_UI_UPDATE_LATEST_HITS:
-                // TODO
-
                 break;
 
             case MSG_UI_UPDATE_LOGO:
@@ -143,34 +145,45 @@ public class ExLauncher extends Activity {
                 break;
 
             case MSG_UI_UPDATE_RIGHT_SIDE:
-                updateRightSide();
+                displayRightSide();
                 break;
             }
         }
+
     };
 
     private void getDealerLogo() {
-        String logoUrl = mSharedPreferences.getString(JsonAdData.DEALER_LOGO,
-                null);
-        if (TextUtils.isEmpty(logoUrl)) {
-            Log.e(TAG,
-                    "[getDealerLogo] we haven't got the dealer logo url from the ad data yet!");
+        String logoUrlString = mSharedPreferences.getString(
+                JsonAdData.DEALER_LOGO, null);
+
+        if (TextUtils.isEmpty(logoUrlString)) {
+            Log.e(TAG, "[getDealerLogo] logo url is empty!");
             return;
         }
 
-        logd("[getDealerLogo] logoUrl : " + logoUrl);
-        InputStream isBitmap = HttpRequest.getUrlStream(logoUrl);
-        if (isBitmap == null) {
-            logd("[getDealerLogo] can not get logo on " + logoUrl);
+        try {
+            URL url = new URL(logoUrlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(5 * 1000);
+            conn.setRequestMethod("GET");
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                mLogoBitmap = BitmapFactory.decodeStream(conn.getInputStream());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "[getDealerLogo] error when getting logo on "
+                    + logoUrlString);
+            e.printStackTrace();
             return;
         }
 
-        mLogoBitmap = BitmapFactory.decodeStream(isBitmap);
+        if (mLogoBitmap != null) {
+            LauncherUtils.saveBitmap(this, mLogoBitmap, LOGO_NAME);
+        }
+
         mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_LOGO);
-        LauncherUtils.saveBitmapFile(this, mLogoBitmap, LOGO_NAME);
     }
 
-    private void getAdJsonData() {
+    private void getAdData() {
         String mac1 = "mac=00116d063cfc";
         String mac2 = "mac2=a0f4594776de";
         StringBuilder adParamsSb = new StringBuilder();
@@ -181,65 +194,61 @@ public class ExLauncher extends Activity {
         JSONObject jsonAdObj = HttpRequest.getDataFromUrl(adUrl);
 
         if (jsonAdObj == null) {
-            logd("[getAdJsonData] can not get data from " + adUrl);
+            logd("[getAdData] can not get ad data from " + adUrl);
             return;
         }
 
-        Log.d(TAG, jsonAdObj.toString());
+        logd("jsonAdObj : " + jsonAdObj.toString());
         mJsonAdData = new JsonAdData(this, jsonAdObj);
-        mJsonAdData.parseAndSaveToSharedPref();
-
-        Log.d(TAG, mJsonAdData.toString());
+        mJsonAdData.parseAndSaveData();
+        logd(mJsonAdData.toString());
     }
 
-    private void getWeatherJsonData() {
-        String strCity = mSharedPreferences.getString(JsonAdData.CITY, null);
-        String strCountry = mSharedPreferences.getString(JsonAdData.COUNTRY,
-                null);
-        if (TextUtils.isEmpty(strCity) || TextUtils.isEmpty(strCountry)) {
-            Log.e(TAG,
-                    "[getWeatherJsonData] we haven't got country and city from the ad data yet!");
+    private void getWeatherData() {
+        String city = mSharedPreferences.getString(JsonAdData.CITY, null);
+        String country = mSharedPreferences.getString(JsonAdData.COUNTRY, null);
+        if (TextUtils.isEmpty(city) || TextUtils.isEmpty(country)) {
+            Log.w(TAG,
+                    "[getWeatherData] we didn't get city and country from ad data yet!");
             return;
         }
 
-        logd("[getWeatherJsonData] strCity : " + strCity + ", strCountry : "
-                + strCountry);
+        logd("[getWeatherData] city : " + city + ", country : " + country);
 
         String weatherPrefix = "q=";
         StringBuilder weatherParamsSb = new StringBuilder();
         weatherParamsSb.append(weatherPrefix);
-        weatherParamsSb.append(strCity);
+        weatherParamsSb.append(city);
         weatherParamsSb.append(",");
-        weatherParamsSb.append(strCountry);
+        weatherParamsSb.append(country);
         String weatherUrl = JSON_DATA_WEATHER_URL + "?"
                 + weatherParamsSb.toString();
         JSONObject jsonWeatherObj = HttpRequest.getDataFromUrl(weatherUrl);
+
         if (jsonWeatherObj == null) {
-            logd("[getWeatherJsonData] can not get data from " + weatherUrl);
+            logd("[getAdData] can not get weather data from " + weatherUrl);
             return;
         }
 
-        Log.d(TAG, jsonWeatherObj.toString());
+        logd("jsonWeatherObj : " + jsonWeatherObj.toString());
         mJsonWeatherData = new JsonWeatherData(this, jsonWeatherObj);
-        mJsonWeatherData.parseAndSaveToSharedPref();
-
-        Log.d(TAG, mJsonWeatherData.toString());
+        mJsonWeatherData.parseAndSaveData();
+        logd(mJsonWeatherData.toString());
     }
 
     private void getJsonData() {
         // advertisement data
-        getAdJsonData();
+        getAdData();
 
-        // get logo from dealer_logo addr only one time on resume
+        // get logo from dealer logo addr
         if (mFirstGetLogo) {
             mDataHandler.sendEmptyMessage(MSG_DATA_GET_LOGO);
             mFirstGetLogo = false;
         }
 
         // weather data
-        getWeatherJsonData();
+        getWeatherData();
 
-        mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_LATEST_HITS);
         mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_RIGHT_SIDE);
     }
 
@@ -253,13 +262,22 @@ public class ExLauncher extends Activity {
         mTvDate.setVisibility(View.VISIBLE);
     }
 
-    private void updateRightSide() {
-        displayDateAndTime(new Date().getTime());
+    private void displayRightSide() {
+        displayDateAndTime(new Date().getTime()
+                + TimeZone.getDefault().getRawOffset());
 
-        mTvCity.setText(mSharedPreferences.getString(JsonAdData.CITY, null));
+        String city = mSharedPreferences.getString(JsonAdData.CITY, null);
+        if (!TextUtils.isEmpty(city)) {
+            mTvCity.setText(city);
+        }
         mTvCity.setVisibility(View.VISIBLE);
 
-        mIvWeather.setVisibility(View.VISIBLE);
+        String icon = mSharedPreferences.getString(JsonWeatherData.ICON, null);
+        if (!TextUtils.isEmpty(icon)) {
+            int iconId = mWeather.getResIdFromIconName(icon);
+            mIvWeather.setImageResource(iconId);
+            mIvWeather.setVisibility(View.VISIBLE);
+        }
 
         String weatherMain = mSharedPreferences.getString(
                 JsonWeatherData.WEATHER_MAIN, null);
@@ -268,34 +286,31 @@ public class ExLauncher extends Activity {
             StringBuilder weatherSb = new StringBuilder();
             weatherSb.append(weatherMain);
             weatherSb.append(", ");
-            weatherSb.append((int) (temp / 10) + "¡æ");
+            weatherSb.append(((int) (temp / 10)) + "¡æ");
             mTvWeather.setText(weatherSb.toString());
         }
         mTvWeather.setVisibility(View.VISIBLE);
 
         float tempMax = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MAX,
                 0.0f);
-        if (tempMax != 0.0f) {
-            mTvTempHigh.setText("High: " + (int) (tempMax / 10) + "¡æ");
+        if (temp != 0.0f) {
+            mTvTempHigh.setText("High: " + ((int) (tempMax / 10)) + "¡æ");
         }
         mTvTempHigh.setVisibility(View.VISIBLE);
 
         float tempMin = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MIN,
                 0.0f);
-        if (tempMin != 0.0f) {
-            mTvTempLow.setText("High: " + (int) (tempMin / 10) + "¡æ");
+        if (temp != 0.0f) {
+            mTvTempLow.setText("Low: " + ((int) (tempMin / 10)) + "¡æ");
         }
         mTvTempLow.setVisibility(View.VISIBLE);
 
-        float windSpeed = mSharedPreferences.getFloat(JsonWeatherData.SPEED,
-                0.0f);
-        if (windSpeed != 0.0f) {
+        float speed = mSharedPreferences.getFloat(JsonWeatherData.SPEED, 0.0f);
+        float degree = mSharedPreferences.getFloat(JsonWeatherData.DEG, 0.0f);
+        if ((speed != 0.0f) && (degree != 0.0f)) {
             StringBuilder windSb = new StringBuilder();
-            windSb.append("Wind:");
-            // TODO add wind direction here
-
-            windSb.append(" at ");
-            windSb.append(windSpeed + " KPH");
+            windSb.append("Wind degree: " + degree);
+            windSb.append(" \nat " + speed + " KPH");
             mTvWind.setText(windSb.toString());
         }
         mTvWind.setVisibility(View.VISIBLE);
@@ -314,16 +329,13 @@ public class ExLauncher extends Activity {
             mLogoBitmap = LauncherUtils.loadBitmap(this, LOGO_NAME);
         }
 
-        if (mLogoBitmap != null) {
-            // Bitmap oldBgBitmap =
-            // ((BitmapDrawable)mIvLogo.getBackground()).getBitmap();
-            // Bitmap newBgBitmap = Bitmap.createBitmap(mLogoBitmap, 0, 0,
-            // oldBgBitmap.getWidth(), oldBgBitmap.getHeight());
-            // oldBgBitmap.recycle();
-            // mIvLogo.setImageBitmap(newBgBitmap);
-            mIvLogo.setImageBitmap(mLogoBitmap);
-            mIvLogo.setVisibility(View.VISIBLE);
+        if (mLogoBitmap == null) {
+            logd("[displayLogo] we don't get logo from ad data yet!");
+            return;
         }
+
+        mIvLogo.setImageBitmap(mLogoBitmap);
+        mIvLogo.setVisibility(View.VISIBLE);
     }
 
     private String getFormattedString(long timestamp, String format) {
@@ -345,49 +357,44 @@ public class ExLauncher extends Activity {
 
         HandlerThread ht = new HandlerThread("ExLauncher");
         ht.start();
+
         mDataHandler = new DataHandler(ht.getLooper());
         mSharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
+        mWeather = Weather.getInstance();
+        mWeather.initIconMap();
     }
 
     @Override
     protected void onStart() {
-        // TODO Auto-generated method stub
         super.onStart();
-
-        // start to get the data from the ad server and weather server
         mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
     }
 
     @Override
     protected void onResume() {
-        // TODO Auto-generated method stub
         super.onResume();
-        registerReceiver();
-
-        displayDateAndTime(new Date().getTime());
+        displayDateAndTime(new Date().getTime()
+                + TimeZone.getDefault().getRawOffset());
         displayStatus();
+        displayRightSide();
         displayLogo();
-        updateRightSide();
+        registerStatusReceiver();
     }
 
     @Override
     protected void onPause() {
-        // TODO Auto-generated method stub
         super.onPause();
-        unregisterReceiver();
+        unregisterStatusReceiver();
     }
 
     @Override
     protected void onStop() {
-        // TODO Auto-generated method stub
         super.onStop();
-        // unregisterReceiver(mUpdateReceiver);
     }
 
     @Override
     protected void onDestroy() {
-        // TODO Auto-generated method stub
         super.onDestroy();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
     }
@@ -415,13 +422,12 @@ public class ExLauncher extends Activity {
             if (action.equals(CONNECTIVITY_CHANGED)) {
                 displayStatus();
             } else if (action.equals(Intent.ACTION_TIME_TICK)) {
-                // get data from servers every minute
                 mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
             }
         }
     };
 
-    private void registerReceiver() {
+    private void registerStatusReceiver() {
         IntentFilter mediaFilter = new IntentFilter();
         mediaFilter.addAction(Intent.ACTION_MEDIA_EJECT);
         mediaFilter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
@@ -435,7 +441,7 @@ public class ExLauncher extends Activity {
         registerReceiver(netReceiver, netFilter);
     }
 
-    private void unregisterReceiver() {
+    private void unregisterStatusReceiver() {
         unregisterReceiver(mediaReceiver);
         unregisterReceiver(netReceiver);
     }
@@ -535,6 +541,7 @@ public class ExLauncher extends Activity {
                 // TODO Auto-generated method stub
             }
         });
+        mBtnRead.getPaint().setFlags(Paint.UNDERLINE_TEXT_FLAG);
     }
 
     private void displayStatus() {
@@ -544,31 +551,30 @@ public class ExLauncher extends Activity {
     }
 
     private boolean isWifiOn() {
-        boolean result = false;
+        boolean wifiOn = false;
         ConnectivityManager con = (ConnectivityManager) this
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo wifiInfo = con
                 .getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
         if (wifiInfo != null) {
-            result = wifiInfo.isConnected();
+            wifiOn = wifiInfo.isConnected();
         }
 
-        return result;
+        return wifiOn;
     }
 
     private boolean isEthernetOn() {
-        boolean result = false;
+        boolean ethernetOn = false;
         ConnectivityManager connectivity = (ConnectivityManager) this
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo ethInfo = connectivity
                 .getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
-
         if (ethInfo != null) {
-            result = ethInfo.isConnected();
+            ethernetOn = ethInfo.isConnected();
         }
 
-        return result;
+        return ethernetOn;
     }
 
     private boolean isUsbExists() {

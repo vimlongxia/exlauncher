@@ -2,10 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ll_weather_and_status"
     android:layout_width="250dp"
-    android:layout_height="430dp"
+    android:layout_height="440dp"
     android:layout_alignParentRight="true"
     android:layout_marginRight="50dp"
-    android:layout_marginTop="50dp"
+    android:layout_marginTop="40dp"
     android:background="#333366"
     android:orientation="vertical" >
 
@@ -37,16 +37,15 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="80dp"
+            android:layout_height="60dp"
             android:gravity="center" >
 
             <ImageView
                 android:id="@+id/iv_weather"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="10dp"
-                android:background="@drawable/sunny"
                 android:contentDescription="@string/app_name"
                 android:visibility="invisible" />
 
@@ -62,12 +61,18 @@
                 android:visibility="invisible" />
         </RelativeLayout>
 
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/right_side_up"
+            android:contentDescription="@string/app_name" />
+
         <TextView
             android:id="@+id/tv_weather"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:text="@string/app_name"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:visibility="invisible" />
@@ -104,7 +109,7 @@
             android:id="@+id/tv_wind"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:singleLine="true"
+            android:lines="2"
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:visibility="invisible" />
@@ -131,9 +136,18 @@
                 android:layout_height="35dp"
                 android:layout_alignParentRight="true"
                 android:layout_below="@id/tv_msg"
+                android:layout_marginRight="10dp"
+                android:background="#00000000"
                 android:text="@string/msg_read"
                 android:visibility="invisible" />
         </RelativeLayout>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:background="@drawable/right_side_down"
+            android:contentDescription="@string/app_name" />
 
         <LinearLayout
             android:layout_width="match_parent"
