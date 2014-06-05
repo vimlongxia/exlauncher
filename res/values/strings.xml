@@ -2,50 +2,6 @@
 <resources>
 
     <string name="app_name">Ex Launcher</string>
-    <string name="my_fav_apps">My Favorite Apps</string>
-    <string name="usr_manager">User Manager</string>
-    <string name="news">News</string>
-    <string name="settings">Settings</string>
-    <string name="common_day_hint">Common Day Here ...</string>
-    <string name="lunar_day_hint">Lunar Day Here ...</string>
-    <string name="time_hint">Time Here ...</string>
-    <string name="temperature_hint">Temperature Here ...</string>
-    <string name="weather_hint">Weather Here ...</string>
-    <string name="wind_hint">Wind Here ...</string>
-    <string name="air_quality_hint">Air Quality Here ...</string>
-    <string name="sec_day_hint">Sec Day</string>
-    <string name="third_day_hint">Third Day</string>
-    <string name="forth_day_hint">Forth Day</string>
-    <string name="sec_day_weather_hint">Sec Day W</string>
-    <string name="third_day_weather_hint">Third Day W</string>
-    <string name="forth_day_weather_hint">Forth Day W</string>
-    <string name="province">省</string>
-    <string name="city">市</string>
-    <string name="area">区</string>
-    <string name="come_from">自</string>
-    <string name="tem">℃</string>
-    <string name="str_cloudy">多云</string>
-    <string name="str_sunny">晴</string>
-    <string name="str_shade">阴</string>
-    <string name="str_smoke">浮尘</string>
-    <string name="str_h_sand_storm">强沙尘暴</string>
-    <string name="str_sand_storm">沙尘暴</string>
-    <string name="str_fog">雾</string>
-    <string name="str_sand_blowing">扬沙</string>
-    <string name="str_s_snow">小雪</string>
-    <string name="str_m_snow">中雪</string>
-    <string name="str_l_snow">大雪</string>
-    <string name="str_h_snow">暴雪</string>
-    <string name="str_snow_shower">阵雪</string>
-    <string name="str_s_rain">小雨</string>
-    <string name="str_m_rain">中雨</string>
-    <string name="str_l_rain">大雨</string>
-    <string name="str_h_rain">暴雨</string>
-    <string name="str_hh_rain">大暴雨</string>
-    <string name="str_hhh_rain">特大暴雨</string>
-    <string name="str_shower">阵雨</string>
-    <string name="str_thunder_shower">雷阵雨</string>
-    <string name="str_transfer">转</string>
 
     <string name="real_time_broadcasting">+ Real Time Broadcasting</string>
     <string name="button_tv">TV</string>
@@ -60,4 +16,11 @@
     <string name="tv_name_hint">FITV</string>
     <string name="latest_hits">LATEST HITS</string>
     <string name="msg_read">Read></string>
+
+    <string name="str_home">Home</string>
+    <string name="str_local">Local</string>
+    <string name="str_apps">Apps</string>
+    <string name="str_browser">Browser</string>
+    <string name="str_setting">Setting</string>
+    <string name="no_msg">No Message</string>
 </resources>

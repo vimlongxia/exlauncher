@@ -29,6 +29,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        
+        <activity 
+            android:name=".ui.AllApps3D"
+            android:launchMode="singleTask"/>
     </application>
 
 </manifest>

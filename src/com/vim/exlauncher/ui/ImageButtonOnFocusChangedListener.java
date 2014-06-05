@@ -29,9 +29,8 @@ public class ImageButtonOnFocusChangedListener implements OnFocusChangeListener 
         Log.d(TAG, "view : " + view + ", hasFocus : " + hasFocus);
         
         if (hasFocus) {
-            view.startAnimation(mAniFocus);
+            ((BottomImageButton) view).setShadowEffect();
         } else {
-            view.startAnimation(mAniUnFocus);
         }
     }
 }

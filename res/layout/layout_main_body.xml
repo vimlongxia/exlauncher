@@ -32,7 +32,7 @@
         android:layout_below="@id/tv_latest_hits"
         android:layout_marginTop="10dp" >
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_first"
             android:layout_width="200dp"
             android:layout_height="346dp"
@@ -41,7 +41,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_second"
             android:layout_width="200dp"
             android:layout_height="250dp"
@@ -51,7 +51,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_third"
             android:layout_width="98dp"
             android:layout_height="90dp"
@@ -62,7 +62,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_forth"
             android:layout_width="97dp"
             android:layout_height="90dp"
@@ -73,7 +73,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_fifth"
             android:layout_width="350dp"
             android:layout_height="180dp"
@@ -84,7 +84,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_sixth"
             android:layout_width="170dp"
             android:layout_height="160dp"
@@ -95,7 +95,7 @@
             android:contentDescription="@string/app_name"
             android:focusableInTouchMode="true" />
 
-        <ImageButton
+        <com.vim.exlauncher.ui.BottomImageButton
             android:id="@+id/ib_lh_seventh"
             android:layout_width="170dp"
             android:layout_height="160dp"

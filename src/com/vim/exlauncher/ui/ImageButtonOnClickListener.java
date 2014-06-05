@@ -14,6 +14,7 @@ import com.vim.exlauncher.R;
 public class ImageButtonOnClickListener implements OnClickListener {
     private static final String TAG = "ImageButtonOnClickListener";
     private Context mContext;
+    private Toast mToast;
     
     public ImageButtonOnClickListener(Context context) {
         mContext = context;
@@ -25,6 +26,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
         Intent intent = new Intent();
         switch (v.getId()) {
         case R.id.ib_apps:
+            intent.setComponent(new ComponentName("com.vim.exlauncher",
+                    "com.vim.exlauncher.ui.AllApps3D"));
             break;
 
         case R.id.ib_drama:
@@ -36,6 +39,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_movies:
+            intent.setComponent(new ComponentName("com.farcore.videoplayer",
+                    "com.farcore.videoplayer.FileList"));
             break;
 
         case R.id.ib_radio:
@@ -54,15 +59,22 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_youtube:
+            intent.setComponent(new ComponentName("com.google.android.youtube",
+                    "com.google.android.youtube.app.honeycomb.Shell$HomeActivity"));
             break;
-
         }
         
         try {
             mContext.startActivity(intent);
         } catch(ActivityNotFoundException anf){
-            Log.e(TAG, "Activity not found! anf : " + anf);
-            Toast.makeText(mContext, "Application Not Found!", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Activity not found!");
+            anf.printStackTrace();
+            
+            if (mToast != null){
+                mToast.cancel();
+            }
+            mToast = Toast.makeText(mContext, "Application Not Found!", Toast.LENGTH_SHORT);
+            mToast.show();
         }
         
     }

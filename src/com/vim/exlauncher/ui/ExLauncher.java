@@ -5,7 +5,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 import org.json.JSONObject;
 
@@ -30,8 +29,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AbsoluteLayout;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -49,13 +48,13 @@ public class ExLauncher extends Activity {
     private ImageView mIvLogo;
 
     // the lastest hits
-    private ImageButton mIbFirst;
-    private ImageButton mIbSecond;
-    private ImageButton mIbThird;
-    private ImageButton mIbForth;
-    private ImageButton mIbFifth;
-    private ImageButton mIbSixth;
-    private ImageButton mIbSeventh;
+    private BottomImageButton mIbFirst;
+    private BottomImageButton mIbSecond;
+    private BottomImageButton mIbThird;
+    private BottomImageButton mIbForth;
+    private BottomImageButton mIbFifth;
+    private BottomImageButton mIbSixth;
+    private BottomImageButton mIbSeventh;
 
     // the bottom buttons
     private BottomImageButton mIbTv;
@@ -66,6 +65,10 @@ public class ExLauncher extends Activity {
     private BottomImageButton mIbRadio;
     private BottomImageButton mIbApps;
     private BottomImageButton mIbSetting;
+
+    // shadow image
+    public static AbsoluteLayout mAlShadow;
+    public static ImageView mIvShadow;
 
     // the right side
     private TextView mTvTime;
@@ -90,14 +93,13 @@ public class ExLauncher extends Activity {
     private static final String CONNECTIVITY_CHANGED = "android.net.conn.CONNECTIVITY_CHANGE";
 
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/userinfo.php";
-    private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather";
+    private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
 
     private JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
     private Bitmap mLogoBitmap;
     private SharedPreferences mSharedPreferences;
-    private boolean mFirstGetLogo = true;
     private DataHandler mDataHandler;
     private Weather mWeather;
 
@@ -221,7 +223,7 @@ public class ExLauncher extends Activity {
         weatherParamsSb.append(city);
         weatherParamsSb.append(",");
         weatherParamsSb.append(country);
-        String weatherUrl = JSON_DATA_WEATHER_URL + "?"
+        String weatherUrl = JSON_DATA_WEATHER_URL + "&"
                 + weatherParamsSb.toString();
         JSONObject jsonWeatherObj = HttpRequest.getDataFromUrl(weatherUrl);
 
@@ -241,10 +243,7 @@ public class ExLauncher extends Activity {
         getAdData();
 
         // get logo from dealer logo addr
-        if (mFirstGetLogo) {
-            mDataHandler.sendEmptyMessage(MSG_DATA_GET_LOGO);
-            mFirstGetLogo = false;
-        }
+        mDataHandler.sendEmptyMessage(MSG_DATA_GET_LOGO);
 
         // weather data
         getWeatherData();
@@ -263,8 +262,7 @@ public class ExLauncher extends Activity {
     }
 
     private void displayRightSide() {
-        displayDateAndTime(new Date().getTime()
-                + TimeZone.getDefault().getRawOffset());
+        displayDateAndTime(new Date().getTime());
 
         String city = mSharedPreferences.getString(JsonAdData.CITY, null);
         if (!TextUtils.isEmpty(city)) {
@@ -274,9 +272,13 @@ public class ExLauncher extends Activity {
 
         String icon = mSharedPreferences.getString(JsonWeatherData.ICON, null);
         if (!TextUtils.isEmpty(icon)) {
-            int iconId = mWeather.getResIdFromIconName(icon);
-            mIvWeather.setImageResource(iconId);
-            mIvWeather.setVisibility(View.VISIBLE);
+            int iconId = -1;
+            iconId = mWeather.getResIdFromIconName(icon);
+
+            if (iconId != -1) {
+                mIvWeather.setImageResource(iconId);
+                mIvWeather.setVisibility(View.VISIBLE);
+            }
         }
 
         String weatherMain = mSharedPreferences.getString(
@@ -286,7 +288,7 @@ public class ExLauncher extends Activity {
             StringBuilder weatherSb = new StringBuilder();
             weatherSb.append(weatherMain);
             weatherSb.append(", ");
-            weatherSb.append(((int) (temp / 10)) + "¡æ");
+            weatherSb.append(String.format("%.1f", temp) + "¡æ");
             mTvWeather.setText(weatherSb.toString());
         }
         mTvWeather.setVisibility(View.VISIBLE);
@@ -294,14 +296,15 @@ public class ExLauncher extends Activity {
         float tempMax = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MAX,
                 0.0f);
         if (temp != 0.0f) {
-            mTvTempHigh.setText("High: " + ((int) (tempMax / 10)) + "¡æ");
+            mTvTempHigh
+                    .setText("High: " + String.format("%.1f", tempMax) + "¡æ");
         }
         mTvTempHigh.setVisibility(View.VISIBLE);
 
         float tempMin = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MIN,
                 0.0f);
         if (temp != 0.0f) {
-            mTvTempLow.setText("Low: " + ((int) (tempMin / 10)) + "¡æ");
+            mTvTempLow.setText("Low: " + String.format("%.1f", tempMin) + "¡æ");
         }
         mTvTempLow.setVisibility(View.VISIBLE);
 
@@ -374,8 +377,7 @@ public class ExLauncher extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        displayDateAndTime(new Date().getTime()
-                + TimeZone.getDefault().getRawOffset());
+        displayDateAndTime(new Date().getTime());
         displayStatus();
         displayRightSide();
         displayLogo();
@@ -453,6 +455,9 @@ public class ExLauncher extends Activity {
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
 
+        mAlShadow = (AbsoluteLayout) findViewById(R.id.ly_shadow_focus);
+        mIvShadow = (ImageView) findViewById(R.id.iv_shadow_focus);
+
         initBottomButton();
         initLatestHits();
         initRightSide();
@@ -460,6 +465,9 @@ public class ExLauncher extends Activity {
 
     private void initBottomButton() {
         // the bottom buttons
+        LinearLayout llWeatherAndStatus = (LinearLayout) findViewById(R.id.ll_bottom);
+        llWeatherAndStatus.getBackground().setAlpha(150);
+        
         mIbTv = (BottomImageButton) findViewById(R.id.ib_tv);
         mIbMovies = (BottomImageButton) findViewById(R.id.ib_movies);
         mIbDrama = (BottomImageButton) findViewById(R.id.ib_drama);
@@ -490,13 +498,13 @@ public class ExLauncher extends Activity {
 
     private void initLatestHits() {
         // the lastest hits
-        mIbFirst = (ImageButton) findViewById(R.id.ib_lh_first);
-        mIbSecond = (ImageButton) findViewById(R.id.ib_lh_second);
-        mIbThird = (ImageButton) findViewById(R.id.ib_lh_third);
-        mIbForth = (ImageButton) findViewById(R.id.ib_lh_forth);
-        mIbFifth = (ImageButton) findViewById(R.id.ib_lh_fifth);
-        mIbSixth = (ImageButton) findViewById(R.id.ib_lh_sixth);
-        mIbSeventh = (ImageButton) findViewById(R.id.ib_lh_seventh);
+        mIbFirst = (BottomImageButton) findViewById(R.id.ib_lh_first);
+        mIbSecond = (BottomImageButton) findViewById(R.id.ib_lh_second);
+        mIbThird = (BottomImageButton) findViewById(R.id.ib_lh_third);
+        mIbForth = (BottomImageButton) findViewById(R.id.ib_lh_forth);
+        mIbFifth = (BottomImageButton) findViewById(R.id.ib_lh_fifth);
+        mIbSixth = (BottomImageButton) findViewById(R.id.ib_lh_sixth);
+        mIbSeventh = (BottomImageButton) findViewById(R.id.ib_lh_seventh);
 
         mIbFirst.setOnClickListener(mImageButtonListener);
         mIbSecond.setOnClickListener(mImageButtonListener);
@@ -534,13 +542,7 @@ public class ExLauncher extends Activity {
         mIvEthernet = (ImageView) findViewById(R.id.iv_ethernet);
         mIvUsb = (ImageView) findViewById(R.id.iv_usb);
 
-        mBtnRead.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                // TODO Auto-generated method stub
-            }
-        });
+        mBtnRead.setOnClickListener(new MsgButtonOnClickListener(this));
         mBtnRead.getPaint().setFlags(Paint.UNDERLINE_TEXT_FLAG);
     }
 
