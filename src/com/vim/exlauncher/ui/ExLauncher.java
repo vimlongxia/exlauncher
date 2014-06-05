@@ -1,13 +1,18 @@
 package com.vim.exlauncher.ui;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONObject;
 
+import android.R.integer;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -92,20 +97,24 @@ public class ExLauncher extends Activity {
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
     private static final String CONNECTIVITY_CHANGED = "android.net.conn.CONNECTIVITY_CHANGE";
 
-    private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/userinfo.php";
+    private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/fitv.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
 
     private JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
     private Bitmap mLogoBitmap;
+    private Map<String, Bitmap> mAdvBitmapMap;
+    private Map<String, Bitmap> mPVAdvBitmapMap;
+    
     private SharedPreferences mSharedPreferences;
+    private boolean mStartGettingLogo = false;
     private DataHandler mDataHandler;
+    private PicHandler mPicHandler;
     private Weather mWeather;
 
     private static final int MSG_DATA_QUIT = 0;
     private static final int MSG_DATA_GET_JSON = 1;
-    private static final int MSG_DATA_GET_LOGO = 2;
 
     final class DataHandler extends Handler {
         public DataHandler(Looper looper) {
@@ -122,9 +131,38 @@ public class ExLauncher extends Activity {
             case MSG_DATA_GET_JSON:
                 getJsonData();
                 break;
+            }
+        }
 
-            case MSG_DATA_GET_LOGO:
+    }
+
+    private static final int MSG_PIC_QUIT = 0;
+    private static final int MSG_PIC_GET_LOGO = 1;
+    private static final int MSG_PIC_GET_LATEST_HITS_PIC = 2;
+    
+    private static final int GET_LOGO_DELAY = 5 * 60 * 1000;
+    private static final int GET_LATEST_HITS_DELAY = 5 * 60 * 1000;
+
+    final class PicHandler extends Handler {
+        public PicHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case MSG_PIC_QUIT:
+                this.getLooper().quit();
+                break;
+
+            case MSG_PIC_GET_LOGO:
                 getDealerLogo();
+                this.sendEmptyMessageDelayed(MSG_PIC_GET_LOGO, GET_LOGO_DELAY);
+                break;
+
+            case MSG_PIC_GET_LATEST_HITS_PIC:
+                getLatestHitsPic();
+                this.sendEmptyMessageDelayed(MSG_PIC_GET_LATEST_HITS_PIC, GET_LATEST_HITS_DELAY);
                 break;
             }
         }
@@ -154,6 +192,87 @@ public class ExLauncher extends Activity {
 
     };
 
+    private void getAdvPic(){
+        Map<String, String> advMap = new HashMap<String, String>();
+        for (int i=1; i<5; i++){
+            String advKey = "Adv" + i;
+            String advUrl = mSharedPreferences.getString(advKey, null);
+            
+            if (!TextUtils.isEmpty(advUrl)) {
+                advMap.put(advKey, advUrl);
+            }
+        }
+        
+        logd("[getAdvPic] advMap : " + advMap);
+        if (advMap.size() < 1) {
+            logd("[getAdvPic] we don't get any adv url from ad data!");
+            return;
+        }
+        
+        InputStream isBitmap = null;
+        mAdvBitmapMap = new HashMap<String, Bitmap>();
+        for (int i=0; i<advMap.size(); i++){
+            String advKey = "Adv" + i;
+            String advUrl = advMap.get(advKey);
+            isBitmap = HttpRequest.getStreamFromUrl(advUrl);
+            
+            if (isBitmap == null) {
+                logd("[getAdvPic] error when getting logo on " + advUrl);
+                continue;
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+            if (bitmap != null) {
+                mAdvBitmapMap.put(advKey, bitmap);
+                LauncherUtils.saveBitmap(this, bitmap, advKey + ".png");
+            }
+        }
+    }
+    
+    private void getPVAdvPic(){
+        Map<String, String> pvadvMap = new HashMap<String, String>();
+        for (int i=1; i<5; i++){
+            String pvadvKey = "PVAdv" + i;
+            String pvadvUrl = mSharedPreferences.getString(pvadvKey, null);
+            
+            if (!TextUtils.isEmpty(pvadvUrl)) {
+                pvadvMap.put(pvadvKey, pvadvUrl);
+            }
+        }
+        
+        logd("[getPVAdvPic] pvadvMap : " + pvadvMap);
+        if (pvadvMap.size() < 1) {
+            logd("[getPVAdvPic] we don't get any adv url from ad data!");
+            return;
+        }
+        
+        InputStream isBitmap = null;
+        mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+        for (int i=0; i<pvadvMap.size(); i++){
+            String pvadvKey = "PVAdv" + i;
+            String pvadvUrl = pvadvMap.get(pvadvKey);
+            isBitmap = HttpRequest.getStreamFromUrl(pvadvUrl);
+            
+            if (isBitmap == null) {
+                logd("[getAdvPic] error when getting logo on " + pvadvUrl);
+                continue;
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+            if (bitmap != null) {
+                mPVAdvBitmapMap.put(pvadvKey, bitmap);
+                LauncherUtils.saveBitmap(this, bitmap, pvadvKey + ".png");
+            }
+        }
+    }
+    
+    private void getLatestHitsPic() {
+        getAdvPic();
+        getPVAdvPic();
+
+        mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_LATEST_HITS);
+    }
+
     private void getDealerLogo() {
         String logoUrlString = mSharedPreferences.getString(
                 JsonAdData.DEALER_LOGO, null);
@@ -163,20 +282,13 @@ public class ExLauncher extends Activity {
             return;
         }
 
-        try {
-            URL url = new URL(logoUrlString);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(5 * 1000);
-            conn.setRequestMethod("GET");
-            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                mLogoBitmap = BitmapFactory.decodeStream(conn.getInputStream());
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "[getDealerLogo] error when getting logo on "
-                    + logoUrlString);
-            e.printStackTrace();
+        InputStream isBitmap = HttpRequest.getStreamFromUrl(logoUrlString);
+        if (isBitmap == null) {
+            logd("[getDealerLogo] error when getting logo on " + logoUrlString);
             return;
         }
+
+        mLogoBitmap = BitmapFactory.decodeStream(isBitmap);
 
         if (mLogoBitmap != null) {
             LauncherUtils.saveBitmap(this, mLogoBitmap, LOGO_NAME);
@@ -243,7 +355,10 @@ public class ExLauncher extends Activity {
         getAdData();
 
         // get logo from dealer logo addr
-        mDataHandler.sendEmptyMessage(MSG_DATA_GET_LOGO);
+        if (!mStartGettingLogo) {
+            mPicHandler.sendEmptyMessage(MSG_PIC_GET_LOGO);
+            mStartGettingLogo = true;
+        }
 
         // weather data
         getWeatherData();
@@ -358,10 +473,14 @@ public class ExLauncher extends Activity {
 
         initRes();
 
-        HandlerThread ht = new HandlerThread("ExLauncher");
-        ht.start();
+        HandlerThread htData = new HandlerThread("ExLauncher_Data");
+        htData.start();
+        mDataHandler = new DataHandler(htData.getLooper());
 
-        mDataHandler = new DataHandler(ht.getLooper());
+        HandlerThread htPic = new HandlerThread("ExLauncher_Pic");
+        htPic.start();
+        mPicHandler = new PicHandler(htPic.getLooper());
+
         mSharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
         mWeather = Weather.getInstance();
@@ -382,6 +501,14 @@ public class ExLauncher extends Activity {
         displayRightSide();
         displayLogo();
         registerStatusReceiver();
+
+        logd("1 : " + mIbFirst.getWidth() + ", " + mIbFirst.getHeight());
+        logd("2 : " + mIbSecond.getWidth() + ", " + mIbSecond.getHeight());
+        logd("3 : " + mIbThird.getWidth() + ", " + mIbThird.getHeight());
+        logd("4 : " + mIbForth.getWidth() + ", " + mIbForth.getHeight());
+        logd("5 : " + mIbFifth.getWidth() + ", " + mIbFifth.getHeight());
+        logd("6 : " + mIbSixth.getWidth() + ", " + mIbSixth.getHeight());
+        logd("7 : " + mIbSeventh.getWidth() + ", " + mIbSeventh.getHeight());
     }
 
     @Override
@@ -399,6 +526,7 @@ public class ExLauncher extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
+        mPicHandler.sendEmptyMessage(MSG_PIC_QUIT);
     }
 
     private BroadcastReceiver mediaReceiver = new BroadcastReceiver() {
@@ -467,7 +595,7 @@ public class ExLauncher extends Activity {
         // the bottom buttons
         LinearLayout llWeatherAndStatus = (LinearLayout) findViewById(R.id.ll_bottom);
         llWeatherAndStatus.getBackground().setAlpha(150);
-        
+
         mIbTv = (BottomImageButton) findViewById(R.id.ib_tv);
         mIbMovies = (BottomImageButton) findViewById(R.id.ib_movies);
         mIbDrama = (BottomImageButton) findViewById(R.id.ib_drama);
@@ -505,7 +633,7 @@ public class ExLauncher extends Activity {
         mIbFifth = (BottomImageButton) findViewById(R.id.ib_lh_fifth);
         mIbSixth = (BottomImageButton) findViewById(R.id.ib_lh_sixth);
         mIbSeventh = (BottomImageButton) findViewById(R.id.ib_lh_seventh);
-
+        
         mIbFirst.setOnClickListener(mImageButtonListener);
         mIbSecond.setOnClickListener(mImageButtonListener);
         mIbThird.setOnClickListener(mImageButtonListener);

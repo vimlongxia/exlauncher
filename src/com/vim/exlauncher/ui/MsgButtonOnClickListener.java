@@ -10,14 +10,14 @@ import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.vim.exlauncher.R;
-import com.vim.exlauncher.R.id;
+import com.vim.exlauncher.data.JsonAdData;
 
 public class MsgButtonOnClickListener implements OnClickListener {
     private static final String TAG = "MsgButtonOnClickListener";
@@ -28,9 +28,10 @@ public class MsgButtonOnClickListener implements OnClickListener {
     }
 
     private ArrayList<String> getMsgsFromSharedPref() {
-        SharedPreferences sp = PreferenceManager
-                .getDefaultSharedPreferences(mContext);
-        Map<String, ?> allMsgs = sp.getAll();
+        SharedPreferences spMsg = mContext.getSharedPreferences(
+                JsonAdData.MSG_SHARED_PREF, Context.MODE_PRIVATE);
+        
+        Map<String, ?> allMsgs = spMsg.getAll();
         ArrayList<String> msgArrayList = new ArrayList<String>();
 
         for (Map.Entry<String, ?> entry : allMsgs.entrySet()) {
@@ -60,10 +61,15 @@ public class MsgButtonOnClickListener implements OnClickListener {
         ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(mContext,
                 R.layout.msg_list_item_layout, msgArrayList);
         msgList.setAdapter(listAdapter);
-        
+
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setView(listLayout);
         AlertDialog dlg = builder.create();
+
+        WindowManager.LayoutParams lp = dlg.getWindow().getAttributes();
+        lp.dimAmount = 0.0f;
+        dlg.getWindow().setAttributes(lp);
+        dlg.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         dlg.show();
     }
 
