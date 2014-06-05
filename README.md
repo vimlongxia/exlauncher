@@ -1,4 +1,0 @@
-exlauncher
-==========
-
-ExLauncher by vim
