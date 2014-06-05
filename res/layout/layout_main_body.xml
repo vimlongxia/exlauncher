@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_toLeftOf="@+id/layout_weather_and_status" >
+
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/logo"
+        android:contentDescription="@string/app_name"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/tv_latest_hits"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/iv_logo"
+        android:layout_below="@id/iv_logo"
+        android:layout_marginTop="30dp"
+        android:text="@string/latest_hits"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/tv_latest_hits"
+        android:layout_below="@id/tv_latest_hits"
+        android:layout_marginTop="10dp" >
+
+        <ImageButton
+            android:id="@+id/ib_lh_first"
+            android:layout_width="200dp"
+            android:layout_height="346dp"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:background="@drawable/bg_lh_first"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_second"
+            android:layout_width="200dp"
+            android:layout_height="250dp"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_first"
+            android:background="@drawable/bg_lh_second"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_third"
+            android:layout_width="98dp"
+            android:layout_height="90dp"
+            android:layout_below="@id/ib_lh_second"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_first"
+            android:background="@drawable/bg_lh_third"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_forth"
+            android:layout_width="97dp"
+            android:layout_height="90dp"
+            android:layout_below="@id/ib_lh_second"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_third"
+            android:background="@drawable/bg_lh_forth"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_fifth"
+            android:layout_width="350dp"
+            android:layout_height="180dp"
+            android:layout_alignParentTop="true"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_second"
+            android:background="@drawable/bg_lh_fifth"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_sixth"
+            android:layout_width="170dp"
+            android:layout_height="160dp"
+            android:layout_below="@id/ib_lh_fifth"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_second"
+            android:background="@drawable/bg_lh_sixth"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+
+        <ImageButton
+            android:id="@+id/ib_lh_seventh"
+            android:layout_width="170dp"
+            android:layout_height="160dp"
+            android:layout_below="@id/ib_lh_fifth"
+            android:layout_margin="@dimen/latest_hits_margin"
+            android:layout_toRightOf="@id/ib_lh_sixth"
+            android:background="@drawable/bg_lh_seventh"
+            android:contentDescription="@string/app_name"
+            android:focusableInTouchMode="true" />
+    </RelativeLayout>
+
+</RelativeLayout>
