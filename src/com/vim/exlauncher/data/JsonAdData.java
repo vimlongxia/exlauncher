@@ -93,6 +93,7 @@ public class JsonAdData {
     public static final String URL_AD3 = "UrlAd3";
     public static final String URL_AD4 = "UrlAd4";
 
+    public static final String AD_PIC_PREFIX = "Adv";
     public static final String ADV1 = "Adv1";
     public static final String ADV2 = "Adv2";
     public static final String ADV3 = "Adv3";
@@ -103,6 +104,7 @@ public class JsonAdData {
     public static final String S_URL_AD3 = "SUrlAd3";
     public static final String S_URL_AD4 = "SUrlAd4";
 
+    public static final String STATIC_AD_PIC_PREFIX = "SAdv";
     public static final String S_ADV1 = "SAdv1";
     public static final String S_ADV2 = "SAdv2";
     public static final String S_ADV3 = "SAdv3";
@@ -114,6 +116,7 @@ public class JsonAdData {
     public static final String VADV3 = "VAdv3";
     public static final String VADV4 = "VAdv4";
 
+    public static final String PVAD_PIC_PREFIX = "PVAdv";
     public static final String PVADV1 = "PVAdv1";
     public static final String PVADV2 = "PVAdv2";
     public static final String PVADV3 = "PVAdv3";
@@ -135,6 +138,41 @@ public class JsonAdData {
         editor.putString(CITY, mCity);
         editor.putString(COUNTRY, mCountry);
         editor.putString(DEALER_LOGO, mDealerLogo);
+        
+        // ad
+        editor.putString(ADV1, mAdv1);
+        editor.putString(ADV2, mAdv2);
+        editor.putString(ADV3, mAdv3);
+        editor.putString(ADV4, mAdv4);
+        
+        editor.putString(URL_AD1, mUrlAd1);
+        editor.putString(URL_AD2, mUrlAd2);
+        editor.putString(URL_AD3, mUrlAd3);
+        editor.putString(URL_AD4, mUrlAd4);
+        
+        // video
+        editor.putString(PVADV1, mPvadv1);
+        editor.putString(PVADV2, mPvadv2);
+        editor.putString(PVADV3, mPvadv3);
+        editor.putString(PVADV4, mPvadv4);
+        
+        editor.putString(VADV1, mVadv1);
+        editor.putString(VADV2, mVadv2);
+        editor.putString(VADV3, mVadv3);
+        editor.putString(VADV4, mVadv4);
+        
+        // static ad
+        editor.putString(S_ADV1, mSAdv1);
+        editor.putString(S_ADV2, mSAdv2);
+        editor.putString(S_ADV3, mSAdv3);
+        editor.putString(S_ADV4, mSAdv4);
+        editor.putString(S_ADV5, mSAdv5);
+        
+        editor.putString(S_URL_AD1, mSUrlAd1);
+        editor.putString(S_URL_AD2, mSUrlAd2);
+        editor.putString(S_URL_AD3, mSUrlAd3);
+        editor.putString(S_URL_AD4, mSUrlAd4);
+
         editor.commit();
 
         saveMsg();
@@ -174,6 +212,11 @@ public class JsonAdData {
             msgSp.edit().remove(keyToDel).commit();
             msgSp.edit().putString(mMsgNo, mBottomMsg).commit();
         }
+        
+        SharedPreferences sp = PreferenceManager
+                .getDefaultSharedPreferences(mContext);
+        Editor editor = sp.edit();
+        editor.putString(BOTTOM_MSG, mBottomMsg).commit();
     }
 
     public void parseAndSaveData() {
@@ -248,22 +291,6 @@ public class JsonAdData {
 
         saveAdDataToSharedPref();
     }
-
-    // public String getBottomMsg() {
-    // return mBottomMsg;
-    // }
-    //
-    // public String getCountry() {
-    // return mCountry;
-    // }
-    //
-    // public String getCity() {
-    // return mCity;
-    // }
-    //
-    // public String getDealerLogo() {
-    // return mDealerLogo;
-    // }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();

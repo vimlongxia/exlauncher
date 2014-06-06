@@ -22,6 +22,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -46,6 +47,9 @@ import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
 import com.vim.exlauncher.data.LauncherUtils;
 import com.vim.exlauncher.data.Weather;
+import static com.vim.exlauncher.data.JsonAdData.AD_PIC_PREFIX;
+import static com.vim.exlauncher.data.JsonAdData.PVAD_PIC_PREFIX;
+import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
 
 public class ExLauncher extends Activity {
     private static final String TAG = "ExLauncher";
@@ -101,14 +105,22 @@ public class ExLauncher extends Activity {
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
 
+    private static final int MAX_AD_PIC_ROTATE_NUM = 4;
+    private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
+    private static final int MAX_STATIC_AD_PIC_ROTATE_NUM = 4;
+
+    private int mAdvPicIndex;
+    private int mPVAdvPicIndex;
+
     private JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
     private Bitmap mLogoBitmap;
     private Map<String, Bitmap> mAdvBitmapMap;
     private Map<String, Bitmap> mPVAdvBitmapMap;
-    
+    private Map<String, Bitmap> mStaticAdvBitmapMap;
+
     private SharedPreferences mSharedPreferences;
-    private boolean mStartGettingLogo = false;
+    private boolean mStartGettingLogo;
     private DataHandler mDataHandler;
     private PicHandler mPicHandler;
     private Weather mWeather;
@@ -139,7 +151,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_PIC_QUIT = 0;
     private static final int MSG_PIC_GET_LOGO = 1;
     private static final int MSG_PIC_GET_LATEST_HITS_PIC = 2;
-    
+
     private static final int GET_LOGO_DELAY = 5 * 60 * 1000;
     private static final int GET_LATEST_HITS_DELAY = 5 * 60 * 1000;
 
@@ -157,34 +169,42 @@ public class ExLauncher extends Activity {
 
             case MSG_PIC_GET_LOGO:
                 getDealerLogo();
-                this.sendEmptyMessageDelayed(MSG_PIC_GET_LOGO, GET_LOGO_DELAY);
+                // this.sendEmptyMessageDelayed(MSG_PIC_GET_LOGO,
+                // GET_LOGO_DELAY);
                 break;
 
             case MSG_PIC_GET_LATEST_HITS_PIC:
                 getLatestHitsPic();
-                this.sendEmptyMessageDelayed(MSG_PIC_GET_LATEST_HITS_PIC, GET_LATEST_HITS_DELAY);
+                // this.sendEmptyMessageDelayed(MSG_PIC_GET_LATEST_HITS_PIC,
+                // GET_LATEST_HITS_DELAY);
                 break;
             }
         }
 
     }
 
-    private static final int MSG_UI_UPDATE_LATEST_HITS = 1;
-    private static final int MSG_UI_UPDATE_LOGO = 2;
-    private static final int MSG_UI_UPDATE_RIGHT_SIDE = 3;
+    private static final int MSG_UI_DISPLAY_LATEST_HITS = 1;
+    private static final int MSG_UI_DISPLAY_LOGO = 2;
+    private static final int MSG_UI_DISPLAY_RIGHT_SIDE = 3;
+
+    private static final int MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL = 5 * 1000;
+
     private Handler mUiHandler = new Handler() {
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case MSG_UI_UPDATE_LATEST_HITS:
+            case MSG_UI_DISPLAY_LATEST_HITS:
+                displayLatestHits();
+                this.sendEmptyMessageDelayed(MSG_UI_DISPLAY_LATEST_HITS,
+                        MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL);
                 break;
 
-            case MSG_UI_UPDATE_LOGO:
+            case MSG_UI_DISPLAY_LOGO:
                 displayLogo();
                 break;
 
-            case MSG_UI_UPDATE_RIGHT_SIDE:
+            case MSG_UI_DISPLAY_RIGHT_SIDE:
                 displayRightSide();
                 break;
             }
@@ -192,85 +212,157 @@ public class ExLauncher extends Activity {
 
     };
 
-    private void getAdvPic(){
-        Map<String, String> advMap = new HashMap<String, String>();
-        for (int i=1; i<5; i++){
-            String advKey = "Adv" + i;
-            String advUrl = mSharedPreferences.getString(advKey, null);
-            
-            if (!TextUtils.isEmpty(advUrl)) {
-                advMap.put(advKey, advUrl);
-            }
-        }
-        
-        logd("[getAdvPic] advMap : " + advMap);
-        if (advMap.size() < 1) {
-            logd("[getAdvPic] we don't get any adv url from ad data!");
-            return;
-        }
-        
-        InputStream isBitmap = null;
-        mAdvBitmapMap = new HashMap<String, Bitmap>();
-        for (int i=0; i<advMap.size(); i++){
-            String advKey = "Adv" + i;
-            String advUrl = advMap.get(advKey);
-            isBitmap = HttpRequest.getStreamFromUrl(advUrl);
-            
-            if (isBitmap == null) {
-                logd("[getAdvPic] error when getting logo on " + advUrl);
-                continue;
-            }
-            
-            Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
-            if (bitmap != null) {
-                mAdvBitmapMap.put(advKey, bitmap);
-                LauncherUtils.saveBitmap(this, bitmap, advKey + ".png");
-            }
-        }
-    }
-    
-    private void getPVAdvPic(){
-        Map<String, String> pvadvMap = new HashMap<String, String>();
-        for (int i=1; i<5; i++){
-            String pvadvKey = "PVAdv" + i;
-            String pvadvUrl = mSharedPreferences.getString(pvadvKey, null);
-            
-            if (!TextUtils.isEmpty(pvadvUrl)) {
-                pvadvMap.put(pvadvKey, pvadvUrl);
-            }
-        }
-        
-        logd("[getPVAdvPic] pvadvMap : " + pvadvMap);
-        if (pvadvMap.size() < 1) {
-            logd("[getPVAdvPic] we don't get any adv url from ad data!");
-            return;
-        }
-        
-        InputStream isBitmap = null;
-        mPVAdvBitmapMap = new HashMap<String, Bitmap>();
-        for (int i=0; i<pvadvMap.size(); i++){
-            String pvadvKey = "PVAdv" + i;
-            String pvadvUrl = pvadvMap.get(pvadvKey);
-            isBitmap = HttpRequest.getStreamFromUrl(pvadvUrl);
-            
-            if (isBitmap == null) {
-                logd("[getAdvPic] error when getting logo on " + pvadvUrl);
-                continue;
-            }
-            
-            Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
-            if (bitmap != null) {
-                mPVAdvBitmapMap.put(pvadvKey, bitmap);
-                LauncherUtils.saveBitmap(this, bitmap, pvadvKey + ".png");
-            }
-        }
-    }
-    
-    private void getLatestHitsPic() {
-        getAdvPic();
-        getPVAdvPic();
+    private void getAdvPic() {
+        // get all the rotated advertising picture from the url and save them
+        synchronized (mAdvBitmapMap) {
+            Map<String, String> advMap = new HashMap<String, String>();
+            for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
+                String advKey = AD_PIC_PREFIX + (i + 1);
+                String advUrl = mSharedPreferences.getString(advKey, null);
 
-        mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_LATEST_HITS);
+                logd("[getAdvPic] advKey : " + advKey + ", advUrl : " + advUrl);
+                if (!TextUtils.isEmpty(advUrl)) {
+                    advMap.put(advKey, advUrl);
+                }
+            }
+
+            logd("[getAdvPic] advMap : " + advMap);
+            if (advMap.size() == 0) {
+                logd("[getAdvPic] we don't get any adv url from ad data!");
+                return;
+            }
+
+            InputStream isBitmap = null;
+            mAdvBitmapMap = new HashMap<String, Bitmap>();
+            for (int i = 0; i < advMap.size(); i++) {
+                String advKey = AD_PIC_PREFIX + (i + 1);
+                String advUrl = advMap.get(advKey);
+                isBitmap = HttpRequest.getStreamFromUrl(advUrl);
+
+                if (isBitmap == null) {
+                    logd("[getAdvPic] error when getting logo on " + advUrl);
+                    continue;
+                }
+
+                Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+                if (bitmap != null) {
+                    mAdvBitmapMap.put(advKey, bitmap);
+                    LauncherUtils.saveBitmap(this, bitmap, advKey + ".png");
+                }
+            }
+        }
+    }
+
+    private void getPVAdvPic() {
+        // get all the rotated video picture from the url and save them
+        synchronized (mPVAdvBitmapMap) {
+            Map<String, String> pvadvMap = new HashMap<String, String>();
+            for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
+                String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
+                String pvadvUrl = mSharedPreferences.getString(pvadvKey, null);
+
+                if (!TextUtils.isEmpty(pvadvUrl)) {
+                    pvadvMap.put(pvadvKey, pvadvUrl);
+                }
+            }
+
+            logd("[getPVAdvPic] pvadvMap : " + pvadvMap);
+            if (pvadvMap.size() == 0) {
+                logd("[getPVAdvPic] we don't get any adv url from ad data!");
+                return;
+            }
+
+            InputStream isBitmap = null;
+            mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+            for (int i = 0; i < pvadvMap.size(); i++) {
+                String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
+                String pvadvUrl = pvadvMap.get(pvadvKey);
+                isBitmap = HttpRequest.getStreamFromUrl(pvadvUrl);
+
+                if (isBitmap == null) {
+                    logd("[getPVAdvPic] error when getting logo on " + pvadvUrl);
+                    continue;
+                }
+
+                Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+                if (bitmap != null) {
+                    mPVAdvBitmapMap.put(pvadvKey, bitmap);
+                    LauncherUtils.saveBitmap(this, bitmap, pvadvKey + ".png");
+                }
+            }
+        }
+    }
+
+    private void getStaticAdvPic() {
+        // get other five static pictures from the url and save them
+        synchronized (mStaticAdvBitmapMap) {
+            Map<String, String> staticAdvMap = new HashMap<String, String>();
+            for (int i = 0; i < MAX_STATIC_AD_PIC_ROTATE_NUM; i++) {
+                String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
+                String staticAdvUrl = mSharedPreferences.getString(
+                        staticAdvKey, null);
+
+                if (!TextUtils.isEmpty(staticAdvUrl)) {
+                    staticAdvMap.put(staticAdvKey, staticAdvUrl);
+                }
+            }
+
+            logd("[getStaticAdvPic] staticAdvMap : " + staticAdvMap);
+            if (staticAdvMap.size() == 0) {
+                logd("[getStaticAdvPic] we don't get any adv url from ad data!");
+                return;
+            }
+
+            InputStream isBitmap = null;
+            mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+            for (int i = 0; i < staticAdvMap.size(); i++) {
+                String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
+                String staticAdvUrl = staticAdvMap.get(staticAdvKey);
+                isBitmap = HttpRequest.getStreamFromUrl(staticAdvUrl);
+
+                if (isBitmap == null) {
+                    logd("[getStaticAdvPic] error when getting logo on "
+                            + staticAdvUrl);
+                    continue;
+                }
+
+                Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+                if (bitmap != null) {
+                    mStaticAdvBitmapMap.put(staticAdvKey, bitmap);
+                    LauncherUtils.saveBitmap(this, bitmap, staticAdvKey
+                            + ".png");
+                }
+            }
+        }
+    }
+
+    private void getLatestHitsPic() {
+        new Thread() {
+            @Override
+            public void run() {
+                // TODO Auto-generated method stub
+                getAdvPic();
+            }
+        }.start();
+
+        new Thread() {
+            @Override
+            public void run() {
+                // TODO Auto-generated method stub
+                getPVAdvPic();
+            }
+        }.start();
+
+        new Thread() {
+            @Override
+            public void run() {
+                // TODO Auto-generated method stub
+                getStaticAdvPic();
+            }
+        }.start();
+
+        // we already start ui updating when onResume
+        // mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
     }
 
     private void getDealerLogo() {
@@ -294,7 +386,7 @@ public class ExLauncher extends Activity {
             LauncherUtils.saveBitmap(this, mLogoBitmap, LOGO_NAME);
         }
 
-        mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_LOGO);
+        mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LOGO);
     }
 
     private void getAdData() {
@@ -354,16 +446,17 @@ public class ExLauncher extends Activity {
         // advertisement data
         getAdData();
 
-        // get logo from dealer logo addr
+        // get logo and latest hits only one time when first resume
         if (!mStartGettingLogo) {
             mPicHandler.sendEmptyMessage(MSG_PIC_GET_LOGO);
+            mPicHandler.sendEmptyMessage(MSG_PIC_GET_LATEST_HITS_PIC);
             mStartGettingLogo = true;
         }
 
         // weather data
         getWeatherData();
 
-        mUiHandler.sendEmptyMessage(MSG_UI_UPDATE_RIGHT_SIDE);
+        mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
     }
 
     private void displayDateAndTime(long timestampMilli) {
@@ -442,6 +535,132 @@ public class ExLauncher extends Activity {
         }
     }
 
+    private void displayLatestHits() {
+//        displayAdvPic();
+//        displayPVAdvPic();
+        displayStaticAdvPic();
+    }
+
+    private void displayAdvPic() {
+        synchronized (mAdvBitmapMap) {
+            if ((mAdvBitmapMap == null) || mAdvBitmapMap.isEmpty()) {
+                logd("[displayAdvPic] mAdvBitmapMap is empty, try to load from the file");
+
+                mAdvBitmapMap = new HashMap<String, Bitmap>();
+                for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
+                    String advKey = AD_PIC_PREFIX + (i + 1);
+                    Bitmap bitmap = LauncherUtils.loadBitmap(this, advKey
+                            + ".png");
+                    if (bitmap != null) {
+                        mAdvBitmapMap.put(advKey, bitmap);
+                    }
+                }
+            }
+
+            logd("[displayAdvPic] mAdvBitmapMap size : " + mAdvBitmapMap.size()
+                    + ", mAdvPicIndex : " + mAdvPicIndex);
+            if (mAdvBitmapMap.size() > 0) {
+                mAdvPicIndex = mAdvPicIndex % mAdvBitmapMap.size();
+                mIbFirst.setBackgroundDrawable(new BitmapDrawable(mAdvBitmapMap
+                        .get(mAdvPicIndex)));
+                mAdvPicIndex++;
+            }
+
+        }
+    }
+
+    private void displayPVAdvPic() {
+        synchronized (mPVAdvBitmapMap) {
+            if ((mPVAdvBitmapMap == null) || mPVAdvBitmapMap.isEmpty()) {
+                logd("[displayPVAdvPic] mPVAdvBitmapMap is empty, try to load from the file");
+
+                mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+                for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
+                    String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
+                    Bitmap bitmap = LauncherUtils.loadBitmap(this, pvadvKey
+                            + ".png");
+                    if (bitmap != null) {
+                        mPVAdvBitmapMap.put(pvadvKey, bitmap);
+                    }
+                }
+            }
+
+            logd("[displayPVAdvPic] mPVAdvBitmapMap size : "
+                    + mPVAdvBitmapMap.size() + ", mPVAdvPicIndex : "
+                    + mPVAdvPicIndex);
+            if (mPVAdvBitmapMap.size() > 0) {
+                mPVAdvPicIndex = mPVAdvPicIndex % mPVAdvBitmapMap.size();
+                mIbSecond.setBackgroundDrawable(new BitmapDrawable(mPVAdvBitmapMap
+                        .get(mPVAdvPicIndex)));
+                mPVAdvPicIndex++;
+            }
+
+        }
+    }
+
+    private void displayStaticAdvPic() {
+        synchronized (mStaticAdvBitmapMap) {
+            if ((mStaticAdvBitmapMap == null) || mStaticAdvBitmapMap.isEmpty()) {
+                logd("[displayStaticAdvPic] mStaticAdvBitmapMap is empty, try to load from the file");
+
+                mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+                for (int i = 0; i < MAX_STATIC_AD_PIC_ROTATE_NUM; i++) {
+                    String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
+                    Bitmap bitmap = LauncherUtils.loadBitmap(this, staticAdvKey
+                            + ".png");
+                    if (bitmap != null) {
+                        mStaticAdvBitmapMap.put(staticAdvKey, bitmap);
+                    }
+                }
+            }
+
+            logd("[displayStaticAdvPic] mStaticAdvBitmapMap size : "
+                    + mStaticAdvBitmapMap.size());
+            if (mStaticAdvBitmapMap.size() == 0) {
+                logd("[displayStaticAdvPic] mStaticAdvBitmapMap is empty!");
+                return;
+            }
+
+            String staticAdvKey = null;
+            Bitmap bitmap = null;
+
+            // display the third pic
+            staticAdvKey = STATIC_AD_PIC_PREFIX + 1;
+            bitmap = mStaticAdvBitmapMap.get(staticAdvKey);
+            if (bitmap != null) {
+                mIbThird.setBackgroundDrawable(new BitmapDrawable(bitmap));
+            }
+
+            // display the forth pic
+            staticAdvKey = STATIC_AD_PIC_PREFIX + 2;
+            bitmap = mStaticAdvBitmapMap.get(staticAdvKey);
+            if (bitmap != null) {
+                mIbForth.setBackgroundDrawable(new BitmapDrawable(bitmap));
+            }
+
+            // display the fifth pic
+            staticAdvKey = STATIC_AD_PIC_PREFIX + 3;
+            bitmap = mStaticAdvBitmapMap.get(staticAdvKey);
+            if (bitmap != null) {
+                mIbFifth.setBackgroundDrawable(new BitmapDrawable(bitmap));
+            }
+
+            // display the sixth pic
+            staticAdvKey = STATIC_AD_PIC_PREFIX + 4;
+            bitmap = mStaticAdvBitmapMap.get(staticAdvKey);
+            if (bitmap != null) {
+                mIbSixth.setBackgroundDrawable(new BitmapDrawable(bitmap));
+            }
+
+            // display the seventh pic
+            staticAdvKey = STATIC_AD_PIC_PREFIX + 5;
+            bitmap = mStaticAdvBitmapMap.get(staticAdvKey);
+            if (bitmap != null) {
+                mIbSeventh.setBackgroundDrawable(new BitmapDrawable(bitmap));
+            }
+        }
+    }
+
     private void displayLogo() {
         if (mLogoBitmap == null) {
             mLogoBitmap = LauncherUtils.loadBitmap(this, LOGO_NAME);
@@ -485,6 +704,13 @@ public class ExLauncher extends Activity {
                 .getDefaultSharedPreferences(this);
         mWeather = Weather.getInstance();
         mWeather.initIconMap();
+
+        mAdvPicIndex = 1;
+        mPVAdvPicIndex = 1;
+        mAdvBitmapMap = new HashMap<String, Bitmap>();
+        mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+        mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+        mStartGettingLogo = false;
     }
 
     @Override
@@ -498,17 +724,12 @@ public class ExLauncher extends Activity {
         super.onResume();
         displayDateAndTime(new Date().getTime());
         displayStatus();
-        displayRightSide();
         displayLogo();
-        registerStatusReceiver();
+        displayRightSide();
 
-        logd("1 : " + mIbFirst.getWidth() + ", " + mIbFirst.getHeight());
-        logd("2 : " + mIbSecond.getWidth() + ", " + mIbSecond.getHeight());
-        logd("3 : " + mIbThird.getWidth() + ", " + mIbThird.getHeight());
-        logd("4 : " + mIbForth.getWidth() + ", " + mIbForth.getHeight());
-        logd("5 : " + mIbFifth.getWidth() + ", " + mIbFifth.getHeight());
-        logd("6 : " + mIbSixth.getWidth() + ", " + mIbSixth.getHeight());
-        logd("7 : " + mIbSeventh.getWidth() + ", " + mIbSeventh.getHeight());
+        mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
+
+        registerStatusReceiver();
     }
 
     @Override
@@ -633,7 +854,7 @@ public class ExLauncher extends Activity {
         mIbFifth = (BottomImageButton) findViewById(R.id.ib_lh_fifth);
         mIbSixth = (BottomImageButton) findViewById(R.id.ib_lh_sixth);
         mIbSeventh = (BottomImageButton) findViewById(R.id.ib_lh_seventh);
-        
+
         mIbFirst.setOnClickListener(mImageButtonListener);
         mIbSecond.setOnClickListener(mImageButtonListener);
         mIbThird.setOnClickListener(mImageButtonListener);

@@ -6,11 +6,12 @@ import java.util.Map;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -42,17 +43,25 @@ public class MsgButtonOnClickListener implements OnClickListener {
     }
 
     private void showMsgBox() {
-        ArrayList<String> msgArrayList = getMsgsFromSharedPref();
+        final ArrayList<String> msgArrayList = getMsgsFromSharedPref();
 
         LayoutInflater inflater = LayoutInflater.from(mContext);
         View listLayout = inflater.inflate(R.layout.msg_list_layout, null);
         LinearLayout llMsgLayout = (LinearLayout) listLayout
                 .findViewById(R.id.ll_list_show);
         TextView tvNoMsg = (TextView) listLayout.findViewById(R.id.tv_no_msg);
-
-        ListView msgList = (ListView) listLayout.findViewById(R.id.lv_msg);
-        TextView tvMsgContent = (TextView) listLayout
+        final TextView tvMsgContent = (TextView) listLayout
                 .findViewById(R.id.tv_msg_content);
+        
+        ListView msgList = (ListView) listLayout.findViewById(R.id.lv_msg);
+        msgList.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int index,
+                    long id) {
+                // TODO Auto-generated method stub
+                tvMsgContent.setText(msgArrayList.get(index));
+            }
+        });
 
         tvNoMsg.setVisibility(msgArrayList.isEmpty() ? View.VISIBLE : View.GONE);
         llMsgLayout.setVisibility(msgArrayList.isEmpty() ? View.GONE
@@ -65,7 +74,6 @@ public class MsgButtonOnClickListener implements OnClickListener {
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setView(listLayout);
         AlertDialog dlg = builder.create();
-
         WindowManager.LayoutParams lp = dlg.getWindow().getAttributes();
         lp.dimAmount = 0.0f;
         dlg.getWindow().setAttributes(lp);
