@@ -1,18 +1,18 @@
 package com.vim.exlauncher.ui;
 
+import static com.vim.exlauncher.data.JsonAdData.AD_PIC_PREFIX;
+import static com.vim.exlauncher.data.JsonAdData.PVAD_PIC_PREFIX;
+import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
+
 import java.io.File;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
 
-import android.R.integer;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,7 +34,7 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -47,9 +47,6 @@ import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
 import com.vim.exlauncher.data.LauncherUtils;
 import com.vim.exlauncher.data.Weather;
-import static com.vim.exlauncher.data.JsonAdData.AD_PIC_PREFIX;
-import static com.vim.exlauncher.data.JsonAdData.PVAD_PIC_PREFIX;
-import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
 
 public class ExLauncher extends Activity {
     private static final String TAG = "ExLauncher";
@@ -95,7 +92,8 @@ public class ExLauncher extends Activity {
     private ImageView mIvUsb;
 
     private ImageButtonOnClickListener mImageButtonListener;
-    private ImageButtonOnFocusChangedListener mImageButtonOnFocusChangedListener;
+    private OnFocusChangeListener mImageButtonOnFocusChangedListener;
+    private BottomImageButton mImageButtonFocus;
 
     private static final String EXTERNAL_STORAGE = "/storage/external_storage";
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
@@ -105,12 +103,15 @@ public class ExLauncher extends Activity {
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
 
-    private static final int MAX_AD_PIC_ROTATE_NUM = 4;
+    public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
     private static final int MAX_STATIC_AD_PIC_ROTATE_NUM = 4;
 
     private int mAdvPicIndex;
+    private static String mKeyAdv;
+    
     private int mPVAdvPicIndex;
+    private static String mKeyPVAdv;
 
     private JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
@@ -121,6 +122,7 @@ public class ExLauncher extends Activity {
 
     private SharedPreferences mSharedPreferences;
     private boolean mStartGettingLogo;
+    private boolean mStartUpdateLatestHits = false;
     private DataHandler mDataHandler;
     private PicHandler mPicHandler;
     private Weather mWeather;
@@ -536,9 +538,17 @@ public class ExLauncher extends Activity {
     }
 
     private void displayLatestHits() {
-//        displayAdvPic();
-//        displayPVAdvPic();
+        displayAdvPic();
+        displayPVAdvPic();
         displayStaticAdvPic();
+    }
+    
+    public static String getCurrentAdvKey(){
+        return mKeyAdv;
+    }
+    
+    public static String getCurrentPVAdvKey(){
+        return mKeyPVAdv;
     }
 
     private void displayAdvPic() {
@@ -560,10 +570,43 @@ public class ExLauncher extends Activity {
             logd("[displayAdvPic] mAdvBitmapMap size : " + mAdvBitmapMap.size()
                     + ", mAdvPicIndex : " + mAdvPicIndex);
             if (mAdvBitmapMap.size() > 0) {
-                mAdvPicIndex = mAdvPicIndex % mAdvBitmapMap.size();
-                mIbFirst.setBackgroundDrawable(new BitmapDrawable(mAdvBitmapMap
-                        .get(mAdvPicIndex)));
+                // get the near pic
+                String advKey = null;
+                boolean hasLoop = false;
+                for (int i = mAdvPicIndex; i <= mAdvBitmapMap.size(); i++) {
+                    if (mAdvBitmapMap.containsKey(AD_PIC_PREFIX + i)) {
+                        // found it
+                        advKey = AD_PIC_PREFIX + i;
+                        break;
+                    }
+
+                    if (!hasLoop && (i == mAdvBitmapMap.size())) {
+                        // loop again for one time
+                        i = 1;
+                        hasLoop = true;
+                    }
+                }
+
+                logd("[displayAdvPic] mAdvPicIndex : " + mAdvPicIndex
+                        + ", advKey : " + advKey);
+                if (TextUtils.isEmpty(advKey)) {
+                    logd("[displayAdvPic] not found adv pic!");
+                    return;
+                }
+
                 mAdvPicIndex++;
+                if (mAdvPicIndex > mAdvBitmapMap.size()) {
+                    mAdvPicIndex = 1;
+                }
+
+                mIbSecond.setBackgroundDrawable(new BitmapDrawable(
+                        mAdvBitmapMap.get(advKey)));
+                mKeyAdv = advKey;
+
+                if ((mImageButtonFocus != null)
+                        && (mImageButtonFocus.getId() == R.id.ib_lh_second)) {
+                    mImageButtonFocus.setShadowEffect();
+                }
             }
 
         }
@@ -589,12 +632,44 @@ public class ExLauncher extends Activity {
                     + mPVAdvBitmapMap.size() + ", mPVAdvPicIndex : "
                     + mPVAdvPicIndex);
             if (mPVAdvBitmapMap.size() > 0) {
-                mPVAdvPicIndex = mPVAdvPicIndex % mPVAdvBitmapMap.size();
-                mIbSecond.setBackgroundDrawable(new BitmapDrawable(mPVAdvBitmapMap
-                        .get(mPVAdvPicIndex)));
-                mPVAdvPicIndex++;
-            }
+                // get the near pic
+                String pvadvKey = null;
+                boolean hasLoop = false;
+                for (int i = mPVAdvPicIndex; i <= mPVAdvBitmapMap.size(); i++) {
+                    if (mPVAdvBitmapMap.containsKey(PVAD_PIC_PREFIX + i)) {
+                        // found it
+                        pvadvKey = PVAD_PIC_PREFIX + i;
+                        break;
+                    }
 
+                    if (!hasLoop && (i == mPVAdvBitmapMap.size())) {
+                        // loop again for one time
+                        i = 1;
+                        hasLoop = true;
+                    }
+                }
+
+                logd("[displayPVAdvPic] mPVAdvPicIndex : " + mPVAdvPicIndex
+                        + ", pvadvKey : " + pvadvKey);
+                if (TextUtils.isEmpty(pvadvKey)) {
+                    logd("[displayPVAdvPic] not found video pic!");
+                    return;
+                }
+
+                mPVAdvPicIndex++;
+                if (mPVAdvPicIndex > mPVAdvBitmapMap.size()) {
+                    mPVAdvPicIndex = 1;
+                }
+
+                mIbFirst.setBackgroundDrawable(new BitmapDrawable(
+                        mPVAdvBitmapMap.get(pvadvKey)));
+                mKeyPVAdv = pvadvKey;
+
+                if ((mImageButtonFocus != null)
+                        && (mImageButtonFocus.getId() == R.id.ib_lh_first)) {
+                    mImageButtonFocus.setShadowEffect();
+                }
+            }
         }
     }
 
@@ -716,6 +791,7 @@ public class ExLauncher extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        logd("[onStart]");
         mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
     }
 
@@ -727,7 +803,10 @@ public class ExLauncher extends Activity {
         displayLogo();
         displayRightSide();
 
-        mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
+        if (!mStartUpdateLatestHits) {
+            mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
+            mStartUpdateLatestHits = true;
+        }
 
         registerStatusReceiver();
     }
@@ -741,6 +820,8 @@ public class ExLauncher extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        logd("[onStop]");
+        mStartGettingLogo = false;
     }
 
     @Override
@@ -799,8 +880,18 @@ public class ExLauncher extends Activity {
 
     private void initRes() {
         mImageButtonListener = new ImageButtonOnClickListener(this);
-        mImageButtonOnFocusChangedListener = new ImageButtonOnFocusChangedListener(
-                this);
+        mImageButtonOnFocusChangedListener = new OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                // TODO Auto-generated method stub
+                Log.d(TAG, "view : " + view + ", hasFocus : " + hasFocus);
+
+                if (hasFocus) {
+                    ((BottomImageButton) view).setShadowEffect();
+                    mImageButtonFocus = (BottomImageButton) view;
+                }
+            }
+        };
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
 

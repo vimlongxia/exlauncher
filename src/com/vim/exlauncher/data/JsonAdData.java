@@ -88,6 +88,7 @@ public class JsonAdData {
 
     // photos advertisment
     public static final String PHOTO_ADVERTISMENT = "phot_Advertisment";
+    public static final String AD_PIC_URL_PREFIX = "UrlAd";
     public static final String URL_AD1 = "UrlAd1";
     public static final String URL_AD2 = "UrlAd2";
     public static final String URL_AD3 = "UrlAd3";
@@ -99,6 +100,7 @@ public class JsonAdData {
     public static final String ADV3 = "Adv3";
     public static final String ADV4 = "Adv4";
 
+    public static final String STATIC_AD_PIC_URL_PREFIX = "SUrlAd";
     public static final String S_URL_AD1 = "SUrlAd1";
     public static final String S_URL_AD2 = "SUrlAd2";
     public static final String S_URL_AD3 = "SUrlAd3";
@@ -111,6 +113,7 @@ public class JsonAdData {
     public static final String S_ADV4 = "SAdv4";
     public static final String S_ADV5 = "SAdv5";
 
+    public static final String PVAD_PIC_URL_PREFIX = "VAdv";
     public static final String VADV1 = "VAdv1";
     public static final String VADV2 = "VAdv2";
     public static final String VADV3 = "VAdv3";

@@ -1,28 +1,45 @@
 package com.vim.exlauncher.ui;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 
 import com.vim.exlauncher.R;
+import com.vim.exlauncher.data.JsonAdData;
 
 public class ImageButtonOnClickListener implements OnClickListener {
     private static final String TAG = "ImageButtonOnClickListener";
     private Context mContext;
     private Toast mToast;
+    private Map<String, String> mKeyUrlMap;
     
     public ImageButtonOnClickListener(Context context) {
         mContext = context;
+        mKeyUrlMap = new HashMap<String, String>();
+        
+        for (int i=1;i<=ExLauncher.MAX_AD_PIC_ROTATE_NUM; i++){
+            mKeyUrlMap.put(JsonAdData.AD_PIC_PREFIX + i, JsonAdData.AD_PIC_URL_PREFIX + i);
+            mKeyUrlMap.put(JsonAdData.PVAD_PIC_PREFIX + i, JsonAdData.PVAD_PIC_URL_PREFIX + i);
+        }
     }
     
     @Override
     public void onClick(View v) {
         // TODO Auto-generated method stub
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+        String url = null;
         Intent intent = new Intent();
         switch (v.getId()) {
         case R.id.ib_apps:
@@ -62,6 +79,107 @@ public class ImageButtonOnClickListener implements OnClickListener {
             intent.setComponent(new ComponentName("com.google.android.youtube",
                     "com.google.android.youtube.app.honeycomb.Shell$HomeActivity"));
             break;
+            
+        case R.id.ib_lh_first:
+            String pvadvKey = ExLauncher.getCurrentPVAdvKey();
+            Log.d(TAG, "ib_lh_first pvadvKey : " + pvadvKey);
+            
+            String pvadvUrlKey = mKeyUrlMap.get(pvadvKey);
+            Log.d(TAG, "ib_lh_first pvadvUrlKey : " + pvadvUrlKey);
+            if (TextUtils.isEmpty(pvadvUrlKey)){
+                Log.e(TAG, "pvadvUrlKey is empty!");
+                return;
+            }
+            
+            url = sp.getString(pvadvUrlKey, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+        case R.id.ib_lh_second:
+            String advKey = ExLauncher.getCurrentAdvKey();
+            String advUrlKey = mKeyUrlMap.get(advKey);
+            if (TextUtils.isEmpty(advUrlKey)){
+                Log.e(TAG, "advUrlKey is empty!");
+                return;
+            }
+            
+            url = sp.getString(advUrlKey, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+        case R.id.ib_lh_third:
+            url = sp.getString(JsonAdData.S_URL_AD1, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+        case R.id.ib_lh_forth:
+            url = sp.getString(JsonAdData.S_URL_AD2, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+        case R.id.ib_lh_fifth:
+            url = sp.getString(JsonAdData.S_URL_AD3, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+        case R.id.ib_lh_sixth:
+            url = sp.getString(JsonAdData.S_URL_AD4, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
+            
+//        case R.id.ib_lh_seventh:
+//            url = sp.getString(JsonAdData.S_URL_AD5, null);
+//            if (TextUtils.isEmpty(url)){
+//                Log.e(TAG, "url is empty!");
+//                return;
+//            }
+//            
+//            intent.setAction("android.intent.action.VIEW");
+//            intent.setData(Uri.parse(url));
+//            mContext.startActivity(intent);
+//            break;
         }
         
         try {
