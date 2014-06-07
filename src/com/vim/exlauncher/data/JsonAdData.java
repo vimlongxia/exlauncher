@@ -200,8 +200,7 @@ public class JsonAdData {
                 return;
             }
         }
-        
-        
+
         if (allMsgs.size() < MAX_RECENT_MSG){
             // the message is not full
             msgSp.edit().putString(mMsgNo, mBottomMsg).commit();

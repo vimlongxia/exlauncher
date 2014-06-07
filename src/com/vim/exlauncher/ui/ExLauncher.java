@@ -21,10 +21,13 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -109,7 +112,7 @@ public class ExLauncher extends Activity {
 
     private int mAdvPicIndex;
     private static String mKeyAdv;
-    
+
     private int mPVAdvPicIndex;
     private static String mKeyPVAdv;
 
@@ -342,7 +345,6 @@ public class ExLauncher extends Activity {
         new Thread() {
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 getAdvPic();
             }
         }.start();
@@ -350,7 +352,6 @@ public class ExLauncher extends Activity {
         new Thread() {
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 getPVAdvPic();
             }
         }.start();
@@ -358,7 +359,6 @@ public class ExLauncher extends Activity {
         new Thread() {
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 getStaticAdvPic();
             }
         }.start();
@@ -542,12 +542,12 @@ public class ExLauncher extends Activity {
         displayPVAdvPic();
         displayStaticAdvPic();
     }
-    
-    public static String getCurrentAdvKey(){
+
+    public static String getCurrentAdvKey() {
         return mKeyAdv;
     }
-    
-    public static String getCurrentPVAdvKey(){
+
+    public static String getCurrentPVAdvKey() {
         return mKeyPVAdv;
     }
 
@@ -883,7 +883,6 @@ public class ExLauncher extends Activity {
         mImageButtonOnFocusChangedListener = new OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
-                // TODO Auto-generated method stub
                 Log.d(TAG, "view : " + view + ", hasFocus : " + hasFocus);
 
                 if (hasFocus) {
@@ -984,6 +983,16 @@ public class ExLauncher extends Activity {
 
         mBtnRead.setOnClickListener(new MsgButtonOnClickListener(this));
         mBtnRead.getPaint().setFlags(Paint.UNDERLINE_TEXT_FLAG);
+        mBtnRead.setOnFocusChangeListener(new OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                if (hasFocus) {
+                    mBtnRead.setBackgroundColor(Color.YELLOW);
+                } else {
+                    mBtnRead.setBackgroundColor(0);
+                }
+            }
+        });
     }
 
     private void displayStatus() {
@@ -1033,6 +1042,33 @@ public class ExLauncher extends Activity {
         }
 
         return false;
+    }
+
+    private String getWifiMac() {
+        String wifiMac = null;
+        // TODO
+        WifiManager wifiMgr = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        if (wifiMgr == null) {
+            Log.e(TAG, "[getWifiMac] can not get WIfiManager!");
+            return null;
+        }
+        
+        WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
+        if (wifiInfo == null) {
+            Log.e(TAG, "[getWifiMac] can not get WifiInfo!");
+            return null;
+        }
+        
+        wifiMac = wifiInfo.getMacAddress();
+        Log.d(TAG, "[getWifiMac] wifi mac : " + wifiMac);
+        return wifiMac;
+    }
+
+    private String getEthernetMac() {
+        String ethernetMac = null;
+        // TODO
+
+        return ethernetMac;
     }
 
     private static void logd(String strs) {

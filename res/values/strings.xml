@@ -23,4 +23,5 @@
     <string name="str_browser">Browser</string>
     <string name="str_setting">Setting</string>
     <string name="no_msg">No Message</string>
+    <string name="msg_list_title">Message Box</string>
 </resources>
