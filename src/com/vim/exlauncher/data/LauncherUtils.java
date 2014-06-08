@@ -3,6 +3,9 @@ package com.vim.exlauncher.data;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -12,6 +15,34 @@ import android.util.Log;
 
 public class LauncherUtils {
     private static final String TAG = "LauncherUtils";
+    
+    public static String getprop(String name) {
+        ProcessBuilder pb = new ProcessBuilder("/system/bin/getprop", name);
+        pb.redirectErrorStream(true);
+
+        Process p = null;
+        InputStream is = null;
+        try {
+            p = pb.start();
+            is = p.getInputStream();
+            Scanner scan = new Scanner(is);
+            scan.useDelimiter("\n");
+            String prop = scan.next();
+            if (prop.length() == 0) return null;
+            return prop;
+        } catch (NoSuchElementException e) {
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                try { is.close(); }
+                catch (Exception e) { }
+            }
+        }
+        return null;
+    }
+
 
     public static Bitmap loadBitmap(Context context, String fileName) {
         if (TextUtils.isEmpty(fileName)) {

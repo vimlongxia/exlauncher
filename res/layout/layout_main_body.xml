@@ -14,6 +14,20 @@
         android:contentDescription="@string/app_name"
         android:visibility="invisible" />
 
+    <Button
+        android:id="@+id/btn_ota_update_info"
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"
+        android:layout_toRightOf="@id/iv_logo"
+        android:layout_alignTop="@id/iv_logo"
+        android:layout_marginLeft="30dp"
+        android:background="#00000000"
+        android:focusableInTouchMode="true"
+        android:gravity="left|center"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:visibility="invisible" />
+
     <TextView
         android:id="@+id/tv_latest_hits"
         android:layout_width="wrap_content"

@@ -141,6 +141,7 @@ public class JsonAdData {
         editor.putString(CITY, mCity);
         editor.putString(COUNTRY, mCountry);
         editor.putString(DEALER_LOGO, mDealerLogo);
+        editor.putString(FIRMWARE_VERSION, mFirmwareVersion);
         
         // ad
         editor.putString(ADV1, mAdv1);

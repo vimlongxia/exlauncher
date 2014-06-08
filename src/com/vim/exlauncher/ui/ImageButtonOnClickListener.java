@@ -40,7 +40,7 @@ public class ImageButtonOnClickListener implements OnClickListener {
         // TODO Auto-generated method stub
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
         String url = null;
-        Intent intent = new Intent();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
         switch (v.getId()) {
         case R.id.ib_apps:
             intent.setComponent(new ComponentName("com.vim.exlauncher",

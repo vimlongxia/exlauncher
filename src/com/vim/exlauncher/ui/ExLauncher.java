@@ -14,7 +14,9 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -37,12 +39,14 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.vim.exlauncher.R;
 import com.vim.exlauncher.data.HttpRequest;
@@ -55,6 +59,7 @@ public class ExLauncher extends Activity {
     private static final String TAG = "ExLauncher";
 
     private ImageView mIvLogo;
+    private Button mBtnOtaUpdateInfo;
 
     // the lastest hits
     private BottomImageButton mIbFirst;
@@ -97,6 +102,10 @@ public class ExLauncher extends Activity {
     private ImageButtonOnClickListener mImageButtonListener;
     private OnFocusChangeListener mImageButtonOnFocusChangedListener;
     private BottomImageButton mImageButtonFocus;
+    private String mCurrentFirmwareVer;
+    private Toast mToast;
+
+    private static final String FIRMWARE_VERSION_PROP = "otaupdater.otaver";
 
     private static final String EXTERNAL_STORAGE = "/storage/external_storage";
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
@@ -190,7 +199,8 @@ public class ExLauncher extends Activity {
 
     private static final int MSG_UI_DISPLAY_LATEST_HITS = 1;
     private static final int MSG_UI_DISPLAY_LOGO = 2;
-    private static final int MSG_UI_DISPLAY_RIGHT_SIDE = 3;
+    private static final int MSG_UI_CHECK_OTA_UPDATE_INFO = 3;
+    private static final int MSG_UI_DISPLAY_RIGHT_SIDE = 4;
 
     private static final int MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL = 5 * 1000;
 
@@ -207,6 +217,10 @@ public class ExLauncher extends Activity {
 
             case MSG_UI_DISPLAY_LOGO:
                 displayLogo();
+                break;
+
+            case MSG_UI_CHECK_OTA_UPDATE_INFO:
+                checkOtaUpdateInfo();
                 break;
 
             case MSG_UI_DISPLAY_RIGHT_SIDE:
@@ -458,6 +472,7 @@ public class ExLauncher extends Activity {
         // weather data
         getWeatherData();
 
+        mUiHandler.sendEmptyMessage(MSG_UI_CHECK_OTA_UPDATE_INFO);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
     }
 
@@ -469,6 +484,40 @@ public class ExLauncher extends Activity {
         String dateFormat = getFormattedString(timestampMilli, "MM-dd-yyyy");
         mTvDate.setText(dateFormat);
         mTvDate.setVisibility(View.VISIBLE);
+    }
+
+    private void checkOtaUpdateInfo() {
+        String firmwareVer = mSharedPreferences.getString(
+                JsonAdData.FIRMWARE_VERSION, null);
+        if (TextUtils.isEmpty(firmwareVer)) {
+            logd("[checkOtaUpdateInfo] we haven't got firmware ver from ad data yet!");
+            mBtnOtaUpdateInfo.setVisibility(View.GONE);
+            return;
+        }
+
+        String newVersion = getString(R.string.new_version_prefix) + " "
+                + firmwareVer + " " + getString(R.string.new_version_postfix);
+
+        if (TextUtils.isEmpty(mCurrentFirmwareVer)) {
+            mBtnOtaUpdateInfo.setText(newVersion);
+            mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
+        } else {
+            try {
+                int intCurrentVer = Integer.parseInt(mCurrentFirmwareVer);
+                int intNewVer = Integer.parseInt(firmwareVer);
+
+                if (intNewVer > intCurrentVer) {
+                    mBtnOtaUpdateInfo.setText(newVersion);
+                    mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
+                } else {
+                    mBtnOtaUpdateInfo.setVisibility(View.GONE);
+                }
+            } catch (NumberFormatException nfe) {
+                Log.e(TAG, "[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer
+                        + " and " + firmwareVer + " error!");
+                mBtnOtaUpdateInfo.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void displayRightSide() {
@@ -786,6 +835,7 @@ public class ExLauncher extends Activity {
         mPVAdvBitmapMap = new HashMap<String, Bitmap>();
         mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
         mStartGettingLogo = false;
+        mCurrentFirmwareVer = getCurrentFirmwareVer();
     }
 
     @Override
@@ -829,6 +879,10 @@ public class ExLauncher extends Activity {
         super.onDestroy();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
         mPicHandler.sendEmptyMessage(MSG_PIC_QUIT);
+    }
+
+    private String getCurrentFirmwareVer() {
+        return LauncherUtils.getprop(FIRMWARE_VERSION_PROP);
     }
 
     private BroadcastReceiver mediaReceiver = new BroadcastReceiver() {
@@ -893,6 +947,42 @@ public class ExLauncher extends Activity {
         };
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
+        mBtnOtaUpdateInfo = (Button) findViewById(R.id.btn_ota_update_info);
+        mBtnOtaUpdateInfo.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                // TODO Auto-generated method stub
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.setComponent(new ComponentName("com.otaupdater",
+                        "com.otaupdater.OTAUpdaterActivity"));
+
+                try {
+                    ExLauncher.this.startActivity(intent);
+                } catch (ActivityNotFoundException anf) {
+                    Log.e(TAG, "Activity not found!");
+                    anf.printStackTrace();
+
+                    if (mToast != null) {
+                        mToast.cancel();
+                    }
+                    mToast = Toast.makeText(ExLauncher.this,
+                            "OTAUpdateCenter App Not Found!",
+                            Toast.LENGTH_SHORT);
+                    mToast.show();
+                }
+
+            }
+        });
+        mBtnOtaUpdateInfo.setOnFocusChangeListener(new OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                if (hasFocus) {
+                    mBtnOtaUpdateInfo.setBackgroundColor(Color.DKGRAY);
+                } else {
+                    mBtnOtaUpdateInfo.setBackgroundColor(0);
+                }
+            }
+        });
 
         mAlShadow = (AbsoluteLayout) findViewById(R.id.ly_shadow_focus);
         mIvShadow = (ImageView) findViewById(R.id.iv_shadow_focus);
@@ -1047,18 +1137,18 @@ public class ExLauncher extends Activity {
     private String getWifiMac() {
         String wifiMac = null;
         // TODO
-        WifiManager wifiMgr = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        WifiManager wifiMgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         if (wifiMgr == null) {
             Log.e(TAG, "[getWifiMac] can not get WIfiManager!");
             return null;
         }
-        
+
         WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
         if (wifiInfo == null) {
             Log.e(TAG, "[getWifiMac] can not get WifiInfo!");
             return null;
         }
-        
+
         wifiMac = wifiInfo.getMacAddress();
         Log.d(TAG, "[getWifiMac] wifi mac : " + wifiMac);
         return wifiMac;

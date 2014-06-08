@@ -87,12 +87,12 @@ public class MsgButtonOnClickListener implements OnClickListener {
         msgList.setItemsCanFocus(false);
         msgList.setFocusable(true);
 
-//        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(mContext,
-//                R.layout.msg_list_item_layout, msgArrayList);
-//        msgList.setAdapter(listAdapter);
-        
-        MsgListAdapter listAdapter = new MsgListAdapter(mContext, msgArrayList);
+        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(mContext,
+                R.layout.msg_list_item_layout, msgArrayList);
         msgList.setAdapter(listAdapter);
+        
+//        MsgListAdapter listAdapter = new MsgListAdapter(mContext, msgArrayList);
+//        msgList.setAdapter(listAdapter);
 
         return listLayout;
     }
@@ -110,6 +110,7 @@ public class MsgButtonOnClickListener implements OnClickListener {
         builder.setTitle(R.string.msg_list_title);
         AlertDialog dlg = builder.create();
         WindowManager.LayoutParams lp = dlg.getWindow().getAttributes();
+        lp.alpha = 0.8f;
         lp.dimAmount = 0.0f;
         dlg.getWindow().setAttributes(lp);
         dlg.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
