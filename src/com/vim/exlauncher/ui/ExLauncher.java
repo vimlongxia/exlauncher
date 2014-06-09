@@ -145,7 +145,7 @@ public class ExLauncher extends Activity {
 
     private SharedPreferences mSharedPreferences;
     private boolean mHasGotPic = false;
-    
+
     // insure MSG_UI_DISPLAY_LATEST_HITS msg be sent only once
     private boolean mStartUpdateLatestHits = false;
     private DataHandler mDataHandler;
@@ -201,7 +201,8 @@ public class ExLauncher extends Activity {
             // get the picture every half hour
             case MSG_PIC_RESET_DATA_FLAG:
                 mHasGotPic = false;
-                this.sendEmptyMessageDelayed(MSG_PIC_RESET_DATA_FLAG, RESET_DATA_FLAG_INTERVAL);
+                this.sendEmptyMessageDelayed(MSG_PIC_RESET_DATA_FLAG,
+                        RESET_DATA_FLAG_INTERVAL);
                 break;
             }
         }
@@ -428,10 +429,10 @@ public class ExLauncher extends Activity {
         // Log.e(TAG, "[getAdData] macEth OR macWifi is empty!");
         // return;
         // }
-        
+
         String macEth = "00116d063cfc";
         String macWifi = "a0f4594776de";
-        
+
         StringBuilder adParamsSb = new StringBuilder();
         adParamsSb.append(MAC_PARAM_ETH + macEth);
         adParamsSb.append("&");
@@ -543,13 +544,13 @@ public class ExLauncher extends Activity {
         mTvDate.setVisibility(View.VISIBLE);
     }
 
-    private void displayCityAndWeatherIcon(){
+    private void displayCityAndWeatherIcon() {
         String city = mSharedPreferences.getString(JsonAdData.CITY, null);
         if (!TextUtils.isEmpty(city)) {
             mTvCity.setText(city);
         }
         mTvCity.setVisibility(View.VISIBLE);
-        
+
         String icon = mSharedPreferences.getString(JsonWeatherData.ICON, null);
         if (!TextUtils.isEmpty(icon)) {
             int iconId = -1;
@@ -561,7 +562,7 @@ public class ExLauncher extends Activity {
             }
         }
     }
-    
+
     private void displayWeatherInfo() {
         String weatherMain = mSharedPreferences.getString(
                 JsonWeatherData.WEATHER_MAIN, null);
@@ -570,7 +571,8 @@ public class ExLauncher extends Activity {
             StringBuilder weatherSb = new StringBuilder();
             weatherSb.append(weatherMain);
             weatherSb.append(", ");
-            weatherSb.append(String.format("%.1f", temp) + "¡æ");
+            weatherSb.append(String.format("%.1f", temp) + " "
+                    + getString(R.string.centigrade));
             mTvWeather.setText(weatherSb.toString());
         }
         mTvWeather.setVisibility(View.VISIBLE);
@@ -578,20 +580,21 @@ public class ExLauncher extends Activity {
         float tempMax = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MAX,
                 0.0f);
         if (temp != 0.0f) {
-            mTvTempHigh
-                    .setText("High: " + String.format("%.1f", tempMax) + "¡æ");
+            mTvTempHigh.setText("High: " + String.format("%.1f", tempMax) + " "
+                    + getString(R.string.centigrade));
         }
         mTvTempHigh.setVisibility(View.VISIBLE);
 
         float tempMin = mSharedPreferences.getFloat(JsonWeatherData.TEMP_MIN,
                 0.0f);
         if (temp != 0.0f) {
-            mTvTempLow.setText("Low: " + String.format("%.1f", tempMin) + "¡æ");
+            mTvTempLow.setText("Low: " + String.format("%.1f", tempMin) + " "
+                    + getString(R.string.centigrade));
         }
         mTvTempLow.setVisibility(View.VISIBLE);
     }
 
-    private void displayWindInfo(){
+    private void displayWindInfo() {
         float speed = mSharedPreferences.getFloat(JsonWeatherData.SPEED, 0.0f);
         float degree = mSharedPreferences.getFloat(JsonWeatherData.DEG, 0.0f);
         if ((speed != 0.0f) && (degree != 0.0f)) {
@@ -602,8 +605,8 @@ public class ExLauncher extends Activity {
         }
         mTvWind.setVisibility(View.VISIBLE);
     }
-    
-    private void displayBottomMsgInfo(){
+
+    private void displayBottomMsgInfo() {
         String bottomMsg = mSharedPreferences.getString(JsonAdData.BOTTOM_MSG,
                 null);
         if (!TextUtils.isEmpty(bottomMsg)) {
@@ -855,8 +858,10 @@ public class ExLauncher extends Activity {
         logd("[getDateFormattedString] dayOfWeek : " + dayOfWeek + ", month : "
                 + month + ", dayOfMonth : " + dayOfMonth + ", year : " + year);
 
-        String dateFormattedString = dayOfWeek + " " + month + " " + dayOfMonth + "." + year;
-        logd("[getDateFormattedString] dateFormattedString : " + dateFormattedString);
+        String dateFormattedString = dayOfWeek + " " + month + " " + dayOfMonth
+                + "." + year;
+        logd("[getDateFormattedString] dateFormattedString : "
+                + dateFormattedString);
 
         return dateFormattedString;
     }
@@ -890,7 +895,7 @@ public class ExLauncher extends Activity {
         mHasGotPic = false;
         mCurrentFirmwareVer = getCurrentFirmwareVer();
         mContext = this;
-        
+
         registerStatusReceiver();
     }
 

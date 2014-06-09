@@ -23,4 +23,5 @@
     <string name="new_version_prefix">New version </string>
     <string name="new_version_postfix"> has checked,\nclick here to update system.</string>
     <string name="msg_list_title">Messages Box</string>
+    <string name="centigrade">℃</string>
 </resources>
