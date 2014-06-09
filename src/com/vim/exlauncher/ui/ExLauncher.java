@@ -7,8 +7,10 @@ import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
 import java.io.File;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -36,8 +38,10 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore.Video;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
@@ -104,6 +108,13 @@ public class ExLauncher extends Activity {
     private BottomImageButton mImageButtonFocus;
     private String mCurrentFirmwareVer;
     private Toast mToast;
+    public static Context mContext;
+
+    private static final String TIME_FORMAT = "HH:mm";
+    public static final String ETH_ADDRESS_PATH = "/sys/class/net/eth0/address";
+    private static final String MAC_PARAM_ETH = "mac=";
+    private static final String MAC_PARAM_WIFI = "mac2=";
+    private static final String WEATHER_QUERY_PREFIX = "q=";
 
     private static final String FIRMWARE_VERSION_PROP = "otaupdater.otaver";
 
@@ -133,7 +144,9 @@ public class ExLauncher extends Activity {
     private Map<String, Bitmap> mStaticAdvBitmapMap;
 
     private SharedPreferences mSharedPreferences;
-    private boolean mStartGettingLogo;
+    private boolean mHasGotPic = false;
+    
+    // insure MSG_UI_DISPLAY_LATEST_HITS msg be sent only once
     private boolean mStartUpdateLatestHits = false;
     private DataHandler mDataHandler;
     private PicHandler mPicHandler;
@@ -163,11 +176,10 @@ public class ExLauncher extends Activity {
     }
 
     private static final int MSG_PIC_QUIT = 0;
-    private static final int MSG_PIC_GET_LOGO = 1;
-    private static final int MSG_PIC_GET_LATEST_HITS_PIC = 2;
+    private static final int MSG_PIC_GET_DATA = 1;
+    private static final int MSG_PIC_RESET_DATA_FLAG = 2;
 
-    private static final int GET_LOGO_DELAY = 5 * 60 * 1000;
-    private static final int GET_LATEST_HITS_DELAY = 5 * 60 * 1000;
+    private static final int RESET_DATA_FLAG_INTERVAL = 30 * 60 * 1000;
 
     final class PicHandler extends Handler {
         public PicHandler(Looper looper) {
@@ -181,16 +193,15 @@ public class ExLauncher extends Activity {
                 this.getLooper().quit();
                 break;
 
-            case MSG_PIC_GET_LOGO:
+            case MSG_PIC_GET_DATA:
                 getDealerLogo();
-                // this.sendEmptyMessageDelayed(MSG_PIC_GET_LOGO,
-                // GET_LOGO_DELAY);
+                getLatestHitsPic();
                 break;
 
-            case MSG_PIC_GET_LATEST_HITS_PIC:
-                getLatestHitsPic();
-                // this.sendEmptyMessageDelayed(MSG_PIC_GET_LATEST_HITS_PIC,
-                // GET_LATEST_HITS_DELAY);
+            // get the picture every half hour
+            case MSG_PIC_RESET_DATA_FLAG:
+                mHasGotPic = false;
+                this.sendEmptyMessageDelayed(MSG_PIC_RESET_DATA_FLAG, RESET_DATA_FLAG_INTERVAL);
                 break;
             }
         }
@@ -356,6 +367,7 @@ public class ExLauncher extends Activity {
     }
 
     private void getLatestHitsPic() {
+        // get advertisement picture
         new Thread() {
             @Override
             public void run() {
@@ -363,6 +375,7 @@ public class ExLauncher extends Activity {
             }
         }.start();
 
+        // get video ad picture
         new Thread() {
             @Override
             public void run() {
@@ -370,6 +383,7 @@ public class ExLauncher extends Activity {
             }
         }.start();
 
+        // get other five advertisement picture
         new Thread() {
             @Override
             public void run() {
@@ -406,12 +420,22 @@ public class ExLauncher extends Activity {
     }
 
     private void getAdData() {
-        String mac1 = "mac=00116d063cfc";
-        String mac2 = "mac2=a0f4594776de";
+        // String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
+        // String macWifi = LauncherUtils.getWifiMac(this);
+        //
+        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        // if (TextUtils.isEmpty(macEth) || TextUtils.isEmpty(macWifi)) {
+        // Log.e(TAG, "[getAdData] macEth OR macWifi is empty!");
+        // return;
+        // }
+        
+        String macEth = "00116d063cfc";
+        String macWifi = "a0f4594776de";
+        
         StringBuilder adParamsSb = new StringBuilder();
-        adParamsSb.append(mac1);
+        adParamsSb.append(MAC_PARAM_ETH + macEth);
         adParamsSb.append("&");
-        adParamsSb.append(mac2);
+        adParamsSb.append(MAC_PARAM_WIFI + macWifi);
         String adUrl = JSON_DATA_AD_URL + "?" + adParamsSb.toString();
         JSONObject jsonAdObj = HttpRequest.getDataFromUrl(adUrl);
 
@@ -437,9 +461,8 @@ public class ExLauncher extends Activity {
 
         logd("[getWeatherData] city : " + city + ", country : " + country);
 
-        String weatherPrefix = "q=";
         StringBuilder weatherParamsSb = new StringBuilder();
-        weatherParamsSb.append(weatherPrefix);
+        weatherParamsSb.append(WEATHER_QUERY_PREFIX);
         weatherParamsSb.append(city);
         weatherParamsSb.append(",");
         weatherParamsSb.append(country);
@@ -463,10 +486,9 @@ public class ExLauncher extends Activity {
         getAdData();
 
         // get logo and latest hits only one time when first resume
-        if (!mStartGettingLogo) {
-            mPicHandler.sendEmptyMessage(MSG_PIC_GET_LOGO);
-            mPicHandler.sendEmptyMessage(MSG_PIC_GET_LATEST_HITS_PIC);
-            mStartGettingLogo = true;
+        if (!mHasGotPic) {
+            mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
+            mHasGotPic = true;
         }
 
         // weather data
@@ -474,16 +496,6 @@ public class ExLauncher extends Activity {
 
         mUiHandler.sendEmptyMessage(MSG_UI_CHECK_OTA_UPDATE_INFO);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
-    }
-
-    private void displayDateAndTime(long timestampMilli) {
-        String timeFormat = getFormattedString(timestampMilli, "HH:mm");
-        mTvTime.setText(timeFormat);
-        mTvTime.setVisibility(View.VISIBLE);
-
-        String dateFormat = getFormattedString(timestampMilli, "MM-dd-yyyy");
-        mTvDate.setText(dateFormat);
-        mTvDate.setVisibility(View.VISIBLE);
     }
 
     private void checkOtaUpdateInfo() {
@@ -520,15 +532,24 @@ public class ExLauncher extends Activity {
         }
     }
 
-    private void displayRightSide() {
-        displayDateAndTime(new Date().getTime());
+    private void displayDateAndTime() {
+        String timeFormat = getTimeFormattedString(TIME_FORMAT);
+        mTvTime.setText(timeFormat);
+        mTvTime.setVisibility(View.VISIBLE);
 
+        // display date
+        String dateFormat = getDateFormattedString("MM-dd-yyyy");
+        mTvDate.setText(dateFormat);
+        mTvDate.setVisibility(View.VISIBLE);
+    }
+
+    private void displayCityAndWeatherIcon(){
         String city = mSharedPreferences.getString(JsonAdData.CITY, null);
         if (!TextUtils.isEmpty(city)) {
             mTvCity.setText(city);
         }
         mTvCity.setVisibility(View.VISIBLE);
-
+        
         String icon = mSharedPreferences.getString(JsonWeatherData.ICON, null);
         if (!TextUtils.isEmpty(icon)) {
             int iconId = -1;
@@ -539,7 +560,9 @@ public class ExLauncher extends Activity {
                 mIvWeather.setVisibility(View.VISIBLE);
             }
         }
-
+    }
+    
+    private void displayWeatherInfo() {
         String weatherMain = mSharedPreferences.getString(
                 JsonWeatherData.WEATHER_MAIN, null);
         float temp = mSharedPreferences.getFloat(JsonWeatherData.TEMP, 0.0f);
@@ -566,7 +589,9 @@ public class ExLauncher extends Activity {
             mTvTempLow.setText("Low: " + String.format("%.1f", tempMin) + "¡æ");
         }
         mTvTempLow.setVisibility(View.VISIBLE);
+    }
 
+    private void displayWindInfo(){
         float speed = mSharedPreferences.getFloat(JsonWeatherData.SPEED, 0.0f);
         float degree = mSharedPreferences.getFloat(JsonWeatherData.DEG, 0.0f);
         if ((speed != 0.0f) && (degree != 0.0f)) {
@@ -576,7 +601,9 @@ public class ExLauncher extends Activity {
             mTvWind.setText(windSb.toString());
         }
         mTvWind.setVisibility(View.VISIBLE);
-
+    }
+    
+    private void displayBottomMsgInfo(){
         String bottomMsg = mSharedPreferences.getString(JsonAdData.BOTTOM_MSG,
                 null);
         if (!TextUtils.isEmpty(bottomMsg)) {
@@ -584,6 +611,14 @@ public class ExLauncher extends Activity {
             mTvMsg.setVisibility(View.VISIBLE);
             mBtnRead.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void displayRightSide() {
+        displayDateAndTime();
+        displayCityAndWeatherIcon();
+        displayWeatherInfo();
+        displayWindInfo();
+        displayBottomMsgInfo();
     }
 
     private void displayLatestHits() {
@@ -799,13 +834,31 @@ public class ExLauncher extends Activity {
         mIvLogo.setVisibility(View.VISIBLE);
     }
 
-    private String getFormattedString(long timestamp, String format) {
-        Date currentTime = new Date(timestamp);
+    private String getTimeFormattedString(String format) {
+        Date currentTime = new Date();
         SimpleDateFormat timeFormatter = new SimpleDateFormat(format);
         String formattedString = timeFormatter.format(currentTime);
 
-        logd("[getFormatString] formattedString : " + formattedString);
+        logd("[getTimeFormattedString] formattedString : " + formattedString);
         return formattedString;
+    }
+
+    private String getDateFormattedString(String format) {
+        Calendar cal = Calendar.getInstance();
+        String dayOfWeek = cal.getDisplayName(Calendar.DAY_OF_WEEK,
+                Calendar.SHORT, Locale.getDefault());
+        String month = cal.getDisplayName(Calendar.MONTH, Calendar.SHORT,
+                Locale.getDefault());
+        int dayOfMonth = cal.get(Calendar.DATE);
+        int year = cal.get(Calendar.YEAR);
+
+        logd("[getDateFormattedString] dayOfWeek : " + dayOfWeek + ", month : "
+                + month + ", dayOfMonth : " + dayOfMonth + ", year : " + year);
+
+        String dateFormattedString = dayOfWeek + " " + month + " " + dayOfMonth + "." + year;
+        logd("[getDateFormattedString] dateFormattedString : " + dateFormattedString);
+
+        return dateFormattedString;
     }
 
     @Override
@@ -834,8 +887,11 @@ public class ExLauncher extends Activity {
         mAdvBitmapMap = new HashMap<String, Bitmap>();
         mPVAdvBitmapMap = new HashMap<String, Bitmap>();
         mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
-        mStartGettingLogo = false;
+        mHasGotPic = false;
         mCurrentFirmwareVer = getCurrentFirmwareVer();
+        mContext = this;
+        
+        registerStatusReceiver();
     }
 
     @Override
@@ -848,37 +904,43 @@ public class ExLauncher extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        displayDateAndTime(new Date().getTime());
         displayStatus();
-        displayLogo();
         displayRightSide();
+        displayLogo();
 
         if (!mStartUpdateLatestHits) {
             mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
             mStartUpdateLatestHits = true;
         }
-
-        registerStatusReceiver();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterStatusReceiver();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         logd("[onStop]");
-        mStartGettingLogo = false;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        unregisterStatusReceiver();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
         mPicHandler.sendEmptyMessage(MSG_PIC_QUIT);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // TODO Auto-generated method stub
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
 
     private String getCurrentFirmwareVer() {
@@ -1132,33 +1194,6 @@ public class ExLauncher extends Activity {
         }
 
         return false;
-    }
-
-    private String getWifiMac() {
-        String wifiMac = null;
-        // TODO
-        WifiManager wifiMgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        if (wifiMgr == null) {
-            Log.e(TAG, "[getWifiMac] can not get WIfiManager!");
-            return null;
-        }
-
-        WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-        if (wifiInfo == null) {
-            Log.e(TAG, "[getWifiMac] can not get WifiInfo!");
-            return null;
-        }
-
-        wifiMac = wifiInfo.getMacAddress();
-        Log.d(TAG, "[getWifiMac] wifi mac : " + wifiMac);
-        return wifiMac;
-    }
-
-    private String getEthernetMac() {
-        String ethernetMac = null;
-        // TODO
-
-        return ethernetMac;
     }
 
     private static void logd(String strs) {

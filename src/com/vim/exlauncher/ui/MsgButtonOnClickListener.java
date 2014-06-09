@@ -7,7 +7,10 @@ import android.R.integer;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.TextureView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -21,6 +24,7 @@ import android.widget.TextView;
 
 import com.vim.exlauncher.R;
 import com.vim.exlauncher.data.JsonAdData;
+import com.vim.exlauncher.data.LauncherUtils;
 import com.vim.exlauncher.data.MsgListAdapter;
 
 public class MsgButtonOnClickListener implements OnClickListener {
@@ -35,7 +39,7 @@ public class MsgButtonOnClickListener implements OnClickListener {
     private ArrayList<String> getMsgsFromSharedPref() {
         SharedPreferences spMsg = mContext.getSharedPreferences(
                 JsonAdData.MSG_SHARED_PREF, Context.MODE_PRIVATE);
-        
+
         Map<String, ?> allMsgs = spMsg.getAll();
         ArrayList<String> msgArrayList = new ArrayList<String>();
 
@@ -45,8 +49,8 @@ public class MsgButtonOnClickListener implements OnClickListener {
 
         return msgArrayList;
     }
-    
-    private View getMsgLisView (final ArrayList<String> msgArrayList){
+
+    private View getMsgLisView(final ArrayList<String> msgArrayList) {
         LayoutInflater inflater = LayoutInflater.from(mContext);
         View listLayout = inflater.inflate(R.layout.msg_list_layout, null);
         LinearLayout llMsgLayout = (LinearLayout) listLayout
@@ -54,17 +58,17 @@ public class MsgButtonOnClickListener implements OnClickListener {
         TextView tvNoMsg = (TextView) listLayout.findViewById(R.id.tv_no_msg);
         final TextView tvMsgContent = (TextView) listLayout
                 .findViewById(R.id.tv_msg_content);
-        
+
         ListView msgList = (ListView) listLayout.findViewById(R.id.lv_msg);
         msgList.setOnItemClickListener(new OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int index,
-                    long id) {
+            public void onItemClick(AdapterView<?> parent, View view,
+                    int index, long id) {
                 // TODO Auto-generated method stub
                 tvMsgContent.setText(msgArrayList.get(index));
             }
         });
-        
+
         msgList.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view,
@@ -76,31 +80,32 @@ public class MsgButtonOnClickListener implements OnClickListener {
             @Override
             public void onNothingSelected(AdapterView<?> arg0) {
                 // TODO Auto-generated method stub
-                
+
             }
         });
 
         tvNoMsg.setVisibility(msgArrayList.isEmpty() ? View.VISIBLE : View.GONE);
         llMsgLayout.setVisibility(msgArrayList.isEmpty() ? View.GONE
                 : View.VISIBLE);
-        
+
         msgList.setItemsCanFocus(false);
         msgList.setFocusable(true);
 
         ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(mContext,
                 R.layout.msg_list_item_layout, msgArrayList);
         msgList.setAdapter(listAdapter);
-        
-//        MsgListAdapter listAdapter = new MsgListAdapter(mContext, msgArrayList);
-//        msgList.setAdapter(listAdapter);
+
+        // MsgListAdapter listAdapter = new MsgListAdapter(mContext,
+        // msgArrayList);
+        // msgList.setAdapter(listAdapter);
 
         return listLayout;
     }
 
-    public static int getFocusPosition(){
+    public static int getFocusPosition() {
         return mFocusPostion;
     }
-    
+
     private void showMsgBox() {
         ArrayList<String> msgArrayList = getMsgsFromSharedPref();
         View listLayout = getMsgLisView(msgArrayList);
@@ -120,6 +125,18 @@ public class MsgButtonOnClickListener implements OnClickListener {
     @Override
     public void onClick(View view) {
         // TODO Auto-generated method stub
+        String wifiMac = LauncherUtils.getWifiMac(ExLauncher.mContext);
+        Log.d(TAG, "wifi mac : " + wifiMac);
+        if (!TextUtils.isEmpty(wifiMac)) {
+            Log.d(TAG, "format wifi mac : " + wifiMac.replace(":", ""));
+        }
+
+        String ethMac = LauncherUtils.getEthMac(ExLauncher.ETH_ADDRESS_PATH);
+        Log.d(TAG, "ethernet mac : " + ethMac);
+        if (!TextUtils.isEmpty(ethMac)) {
+            Log.d(TAG, "format ethernet mac : " + ethMac.replace(":", ""));
+        }
+
         showMsgBox();
     }
 }
