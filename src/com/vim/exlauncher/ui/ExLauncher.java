@@ -30,15 +30,12 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore.Video;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -145,6 +142,7 @@ public class ExLauncher extends Activity {
 
     private SharedPreferences mSharedPreferences;
     private boolean mHasGotPic = false;
+    private boolean mFirstGetData = true;
 
     // insure MSG_UI_DISPLAY_LATEST_HITS msg be sent only once
     private boolean mStartUpdateLatestHits = false;
@@ -497,6 +495,33 @@ public class ExLauncher extends Activity {
 
         mUiHandler.sendEmptyMessage(MSG_UI_CHECK_OTA_UPDATE_INFO);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
+
+        if (mFirstGetData && !hasNetworkConnected()) {
+            // for first time we haven't connected to the network, we should
+            // check always until the network connected
+            mHasGotPic = false;
+        } else {
+            mFirstGetData = false;
+        }
+    }
+
+    private boolean hasNetworkConnected() {
+        boolean netStatus = false;
+        try {
+            ConnectivityManager connectManager = (ConnectivityManager) this
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetworkInfo = connectManager
+                    .getActiveNetworkInfo();
+
+            if ((activeNetworkInfo != null) && activeNetworkInfo.isAvailable()
+                    && activeNetworkInfo.isConnected()) {
+                netStatus = true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return netStatus;
     }
 
     private void checkOtaUpdateInfo() {
