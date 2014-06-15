@@ -53,6 +53,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_games:
+            intent.setComponent(new ComponentName("com.vim.exlauncher",
+                    "com.vim.exlauncher.ui.GamesActivity"));
             break;
 
         case R.id.ib_movies:
@@ -76,8 +78,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_youtube:
-            intent.setComponent(new ComponentName("com.google.android.youtube",
-                    "com.google.android.youtube.app.honeycomb.Shell$HomeActivity"));
+            intent.setComponent(new ComponentName("com.google.android.youtube.googletv",
+                    "com.google.android.youtube.googletv.MainActivity"));
             break;
             
         case R.id.ib_lh_first:
@@ -169,17 +171,17 @@ public class ImageButtonOnClickListener implements OnClickListener {
             mContext.startActivity(intent);
             break;
             
-//        case R.id.ib_lh_seventh:
-//            url = sp.getString(JsonAdData.S_URL_AD5, null);
-//            if (TextUtils.isEmpty(url)){
-//                Log.e(TAG, "url is empty!");
-//                return;
-//            }
-//            
-//            intent.setAction("android.intent.action.VIEW");
-//            intent.setData(Uri.parse(url));
-//            mContext.startActivity(intent);
-//            break;
+        case R.id.ib_lh_seventh:
+            url = sp.getString(JsonAdData.S_URL_AD5, null);
+            if (TextUtils.isEmpty(url)){
+                Log.e(TAG, "url is empty!");
+                return;
+            }
+            
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(Uri.parse(url));
+            mContext.startActivity(intent);
+            break;
         }
         
         try {
@@ -194,7 +196,5 @@ public class ImageButtonOnClickListener implements OnClickListener {
             mToast = Toast.makeText(mContext, "Application Not Found!", Toast.LENGTH_SHORT);
             mToast.show();
         }
-        
     }
-
 }

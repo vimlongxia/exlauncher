@@ -130,10 +130,23 @@
                 android:textColor="#FFFFFF"
                 android:visibility="invisible" />
 
+            <ImageButton
+                android:id="@+id/ib_read"
+                android:layout_width="22dp"
+                android:layout_height="20dp"
+                android:layout_alignParentRight="true"
+                android:layout_below="@id/tv_msg"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/icon_pop_msg"
+                android:contentDescription="@string/app_name"
+                android:focusableInTouchMode="true"
+                android:text="@string/msg_read"
+                android:visibility="invisible" />
+
             <Button
                 android:id="@+id/btn_read"
                 android:layout_width="wrap_content"
-                android:layout_height="35dp"
+                android:layout_height="20dp"
                 android:layout_alignParentRight="true"
                 android:layout_below="@id/tv_msg"
                 android:layout_marginRight="10dp"

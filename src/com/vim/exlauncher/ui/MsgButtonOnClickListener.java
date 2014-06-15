@@ -1,56 +1,79 @@
 package com.vim.exlauncher.ui;
 
-import java.util.ArrayList;
-import java.util.Map;
-
-import android.R.integer;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnDismissListener;
+import android.database.Cursor;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.TextureView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
+import android.widget.CursorAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.vim.exlauncher.R;
-import com.vim.exlauncher.data.JsonAdData;
+import com.vim.exlauncher.data.BottomMsgContentProvider;
 import com.vim.exlauncher.data.LauncherUtils;
-import com.vim.exlauncher.data.MsgListAdapter;
+import com.vim.exlauncher.data.MsgContentUtils;
 
 public class MsgButtonOnClickListener implements OnClickListener {
     private static final String TAG = "MsgButtonOnClickListener";
     private Context mContext;
-    private static int mFocusPostion;
+    private static Cursor mMsgCursor;
+
+    public static Cursor getMsgCursor() {
+        return mMsgCursor;
+    }
+
+    private boolean isMsgDatabaseEmpty() {
+        return ((mMsgCursor == null) || (mMsgCursor.getCount() == 0));
+    }
 
     public MsgButtonOnClickListener(Context context) {
         mContext = context;
     }
 
-    private ArrayList<String> getMsgsFromSharedPref() {
-        SharedPreferences spMsg = mContext.getSharedPreferences(
-                JsonAdData.MSG_SHARED_PREF, Context.MODE_PRIVATE);
+    private class MsgCursorAdapter extends CursorAdapter {
+        private LayoutInflater mInflater;
 
-        Map<String, ?> allMsgs = spMsg.getAll();
-        ArrayList<String> msgArrayList = new ArrayList<String>();
-
-        for (Map.Entry<String, ?> entry : allMsgs.entrySet()) {
-            msgArrayList.add(entry.getValue().toString());
+        public MsgCursorAdapter(Context context, Cursor cursor) {
+            super(context, cursor, true);
+            mInflater = LayoutInflater.from(context);
         }
 
-        return msgArrayList;
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+            // TODO Auto-generated method stub
+            int msgId = cursor.getInt(cursor
+                    .getColumnIndex(BottomMsgContentProvider.MSG_ID));
+            String bottomMsg = cursor.getString(cursor
+                    .getColumnIndex(BottomMsgContentProvider.BOTTOM_MSG));
+
+            TextView tvMsgId = (TextView) view.findViewById(R.id.tv_msg_id);
+            TextView tvBottomMsg = (TextView) view
+                    .findViewById(R.id.tv_bottom_msg);
+
+            tvMsgId.setText(msgId + "");
+            tvBottomMsg.setText(bottomMsg);
+        }
+
+        @Override
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            // TODO Auto-generated method stub
+            View view = mInflater.inflate(R.layout.msg_list_item_layout, null);
+            return view;
+        }
     }
 
-    private View getMsgLisView(final ArrayList<String> msgArrayList) {
+    private View getMsgLisView() {
         LayoutInflater inflater = LayoutInflater.from(mContext);
         View listLayout = inflater.inflate(R.layout.msg_list_layout, null);
         LinearLayout llMsgLayout = (LinearLayout) listLayout
@@ -65,54 +88,44 @@ public class MsgButtonOnClickListener implements OnClickListener {
             public void onItemClick(AdapterView<?> parent, View view,
                     int index, long id) {
                 // TODO Auto-generated method stub
-                tvMsgContent.setText(msgArrayList.get(index));
+                if (mMsgCursor.moveToPosition(index)) {
+                    String bottomMsg = mMsgCursor.getString(mMsgCursor
+                            .getColumnIndex(BottomMsgContentProvider.BOTTOM_MSG));
+                    tvMsgContent.setText(bottomMsg);
+                }
             }
         });
 
-        msgList.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view,
-                    int position, long id) {
-                // TODO Auto-generated method stub
-                mFocusPostion = position;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0) {
-                // TODO Auto-generated method stub
-
-            }
-        });
-
-        tvNoMsg.setVisibility(msgArrayList.isEmpty() ? View.VISIBLE : View.GONE);
-        llMsgLayout.setVisibility(msgArrayList.isEmpty() ? View.GONE
+        tvNoMsg.setVisibility(isMsgDatabaseEmpty() ? View.VISIBLE : View.GONE);
+        llMsgLayout.setVisibility(isMsgDatabaseEmpty() ? View.GONE
                 : View.VISIBLE);
 
         msgList.setItemsCanFocus(false);
         msgList.setFocusable(true);
 
-        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(mContext,
-                R.layout.msg_list_item_layout, msgArrayList);
-        msgList.setAdapter(listAdapter);
-
-        // MsgListAdapter listAdapter = new MsgListAdapter(mContext,
-        // msgArrayList);
-        // msgList.setAdapter(listAdapter);
+        MsgCursorAdapter msgAdapter = new MsgCursorAdapter(mContext, mMsgCursor);
+        msgList.setAdapter(msgAdapter);
 
         return listLayout;
     }
 
-    public static int getFocusPosition() {
-        return mFocusPostion;
-    }
-
     private void showMsgBox() {
-        ArrayList<String> msgArrayList = getMsgsFromSharedPref();
-        View listLayout = getMsgLisView(msgArrayList);
+        mMsgCursor = MsgContentUtils.getAllBottomMsgOrderByDesc(mContext);
+        View listLayout = getMsgLisView();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setView(listLayout);
         builder.setTitle(R.string.msg_list_title);
+        builder.setOnDismissListener(new OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface arg0) {
+                // TODO Auto-generated method stub
+                if (mMsgCursor != null) {
+                    mMsgCursor.close();
+                    mMsgCursor = null;
+                }
+            }
+        });
         AlertDialog dlg = builder.create();
         WindowManager.LayoutParams lp = dlg.getWindow().getAttributes();
         lp.alpha = 0.8f;
@@ -138,5 +151,6 @@ public class MsgButtonOnClickListener implements OnClickListener {
         }
 
         showMsgBox();
+        ExLauncher.resetMsgStatusAndRefresh(false);
     }
 }

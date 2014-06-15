@@ -1,9 +1,5 @@
 package com.vim.exlauncher.data;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -46,6 +42,7 @@ public class JsonAdData {
     private String mSUrlAd2;
     private String mSUrlAd3;
     private String mSUrlAd4;
+    private String mSUrlAd5;
 
     private String mSAdv1;
     private String mSAdv2;
@@ -66,20 +63,20 @@ public class JsonAdData {
     private String mCountry;
     private String mCity;
 
+    private boolean mIsMsgNew = false;
+
     public static final String USERS = "Users";
     public static final String PERSONAL = "Personal";
     public static final String DEALER_LOGO = "Dealer_logo";
     public static final String NAME = "Name";
     public static final String EXPIRY_DATE = "Expiry_Date";
     public static final String MAC = "mac";
-    
+
     public static final String BOTTOM_MSG = "Bottom_Msg";
     public static final String MSG_NO = "Msg No";
 
-    public static final String MSG_SHARED_PREF = "msg_shared_pref";
-    private static final int MAX_RECENT_MSG = 5;
-    private static final String BOTTOM_MSG_PRE_IN_SHARED_PREF = BOTTOM_MSG + "/";
- 
+    public static final int MAX_RECENT_MSG = 5;
+
     // whether start
     public static final String WHETHER = "Whether";
     public static final String MENU_STATUS = "Menu_Status";
@@ -105,6 +102,7 @@ public class JsonAdData {
     public static final String S_URL_AD2 = "SUrlAd2";
     public static final String S_URL_AD3 = "SUrlAd3";
     public static final String S_URL_AD4 = "SUrlAd4";
+    public static final String S_URL_AD5 = "SUrlAd5";
 
     public static final String STATIC_AD_PIC_PREFIX = "SAdv";
     public static final String S_ADV1 = "SAdv1";
@@ -142,80 +140,82 @@ public class JsonAdData {
         editor.putString(COUNTRY, mCountry);
         editor.putString(DEALER_LOGO, mDealerLogo);
         editor.putString(FIRMWARE_VERSION, mFirmwareVersion);
-        
+
         // ad
         editor.putString(ADV1, mAdv1);
         editor.putString(ADV2, mAdv2);
         editor.putString(ADV3, mAdv3);
         editor.putString(ADV4, mAdv4);
-        
+
         editor.putString(URL_AD1, mUrlAd1);
         editor.putString(URL_AD2, mUrlAd2);
         editor.putString(URL_AD3, mUrlAd3);
         editor.putString(URL_AD4, mUrlAd4);
-        
+
         // video
         editor.putString(PVADV1, mPvadv1);
         editor.putString(PVADV2, mPvadv2);
         editor.putString(PVADV3, mPvadv3);
         editor.putString(PVADV4, mPvadv4);
-        
+
         editor.putString(VADV1, mVadv1);
         editor.putString(VADV2, mVadv2);
         editor.putString(VADV3, mVadv3);
         editor.putString(VADV4, mVadv4);
-        
+
         // static ad
         editor.putString(S_ADV1, mSAdv1);
         editor.putString(S_ADV2, mSAdv2);
         editor.putString(S_ADV3, mSAdv3);
         editor.putString(S_ADV4, mSAdv4);
         editor.putString(S_ADV5, mSAdv5);
-        
+
         editor.putString(S_URL_AD1, mSUrlAd1);
         editor.putString(S_URL_AD2, mSUrlAd2);
         editor.putString(S_URL_AD3, mSUrlAd3);
         editor.putString(S_URL_AD4, mSUrlAd4);
+        editor.putString(S_URL_AD5, mSUrlAd5);
 
         editor.commit();
 
         saveMsg();
     }
-    
-    private void saveMsg(){
-        SharedPreferences msgSp = mContext.getSharedPreferences(
-                MSG_SHARED_PREF, Context.MODE_PRIVATE);
-        
-        Map<String, ?> allMsgs = msgSp.getAll();
-        ArrayList<Integer> msgArrayList = new ArrayList<Integer>();
-        
+
+    public boolean isMsgNew() {
+        return mIsMsgNew;
+    }
+
+    public void setMsgStatus(boolean status) {
+        mIsMsgNew = status;
+    }
+
+    private void saveMsg() {
         // check if this is a new msg
-        if (allMsgs.size() > 0) {
-            for (Map.Entry<String, ?> entry : allMsgs.entrySet()) {
-                String keyStr = entry.getKey().toString();
-                msgArrayList.add(Integer.parseInt(keyStr));
-            }
-            
-            if (msgArrayList.contains(Integer.parseInt(mMsgNo))) {
-                Log.d(TAG, "[saveMsg] " + mMsgNo + " : " + mBottomMsg + " is not a new msg");
-                return;
+        mIsMsgNew = MsgContentUtils.isNewMsg(mContext, mMsgNo);
+        
+        if (!mIsMsgNew) {
+            Log.d(TAG, "[saveMsg] this is not a new msg, bailed.");
+            return;
+        }
+        
+        if (!MsgContentUtils.reachMaxNum(mContext)) {
+            // the message is not full
+            MsgContentUtils.inserIntoMsgTable(mContext, mMsgNo, mBottomMsg);
+        } else {
+            // the message list is full,
+            int msgEarlest = MsgContentUtils.getEarlestMsgId(mContext);
+
+            Log.d(TAG, "[saveMsg] no to Del : " + msgEarlest + ", new msg no : "
+                    + mMsgNo);
+
+            if (msgEarlest > 0) {
+                MsgContentUtils.deleteMsgById(mContext, mMsgNo);
+                MsgContentUtils.inserIntoMsgTable(mContext, mMsgNo, mBottomMsg);
+            } else {
+                Log.e(TAG, " the ealiest msg number is error!");
             }
         }
 
-        if (allMsgs.size() < MAX_RECENT_MSG){
-            // the message is not full
-            msgSp.edit().putString(mMsgNo, mBottomMsg).commit();
-        } else {
-            // the message list is full, 
-            Collections.sort(msgArrayList);
-            String keyToDel = msgArrayList.get(0) + "";
-            
-            Log.d(TAG, "[saveMsg] no to Del : " + keyToDel + ", new msg no : " + mMsgNo);
-            
-            msgSp.edit().remove(keyToDel).commit();
-            msgSp.edit().putString(mMsgNo, mBottomMsg).commit();
-        }
-        
         SharedPreferences sp = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         Editor editor = sp.edit();
@@ -269,6 +269,7 @@ public class JsonAdData {
             mSUrlAd2 = photAdJsonObejct.getString(S_URL_AD2);
             mSUrlAd3 = photAdJsonObejct.getString(S_URL_AD3);
             mSUrlAd4 = photAdJsonObejct.getString(S_URL_AD4);
+            mSUrlAd5 = photAdJsonObejct.getString(S_URL_AD5);
 
             mSAdv1 = photAdJsonObejct.getString(S_ADV1);
             mSAdv2 = photAdJsonObejct.getString(S_ADV2);
@@ -321,6 +322,7 @@ public class JsonAdData {
         sb.append(S_URL_AD2 + " : " + mSUrlAd2 + "\n");
         sb.append(S_URL_AD3 + " : " + mSUrlAd3 + "\n");
         sb.append(S_URL_AD4 + " : " + mSUrlAd4 + "\n");
+        sb.append(S_URL_AD5 + " : " + mSUrlAd5 + "\n");
         sb.append(S_ADV1 + " : " + mSAdv1 + "\n");
         sb.append(S_ADV2 + " : " + mSAdv2 + "\n");
         sb.append(S_ADV3 + " : " + mSAdv3 + "\n");

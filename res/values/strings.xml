@@ -24,4 +24,7 @@
     <string name="new_version_postfix"> has checked,\nclick here to update system.</string>
     <string name="msg_list_title">Messages Box</string>
     <string name="centigrade">℃</string>
+    <string name="yes">Yes</string>
+    <string name="later">Later</string>
+    <string name="new_version_available">New version of Firmware Available</string>
 </resources>

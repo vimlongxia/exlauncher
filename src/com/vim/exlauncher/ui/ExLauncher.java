@@ -16,10 +16,12 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -30,6 +32,7 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.NetworkInfo.State;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -40,10 +43,10 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -93,8 +96,9 @@ public class ExLauncher extends Activity {
     private TextView mTvTempHigh;
     private TextView mTvTempLow;
     private TextView mTvWind;
-    private TextView mTvMsg;
-    private Button mBtnRead;
+    private static TextView mTvMsg;
+    private static Button mBtnRead;
+    private static ImageButton mIbRead;
     private ImageView mIvWeather;
     private ImageView mIvWifi;
     private ImageView mIvEthernet;
@@ -125,7 +129,7 @@ public class ExLauncher extends Activity {
 
     public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
-    private static final int MAX_STATIC_AD_PIC_ROTATE_NUM = 4;
+    private static final int MAX_STATIC_AD_PIC_NUM = 5;
 
     private int mAdvPicIndex;
     private static String mKeyAdv;
@@ -133,15 +137,14 @@ public class ExLauncher extends Activity {
     private int mPVAdvPicIndex;
     private static String mKeyPVAdv;
 
-    private JsonAdData mJsonAdData;
+    private static JsonAdData mJsonAdData;
     private JsonWeatherData mJsonWeatherData;
     private Bitmap mLogoBitmap;
     private Map<String, Bitmap> mAdvBitmapMap;
     private Map<String, Bitmap> mPVAdvBitmapMap;
     private Map<String, Bitmap> mStaticAdvBitmapMap;
 
-    private SharedPreferences mSharedPreferences;
-    private boolean mHasGotPic = false;
+    private static SharedPreferences mSharedPreferences;
     private boolean mFirstGetData = true;
 
     // insure MSG_UI_DISPLAY_LATEST_HITS msg be sent only once
@@ -149,9 +152,12 @@ public class ExLauncher extends Activity {
     private DataHandler mDataHandler;
     private PicHandler mPicHandler;
     private Weather mWeather;
+    private AlertDialog mUpdateDialog;
 
     private static final int MSG_DATA_QUIT = 0;
     private static final int MSG_DATA_GET_JSON = 1;
+
+    private static final int GET_JSON_DELAY = 15 * 60 * 1000;
 
     final class DataHandler extends Handler {
         public DataHandler(Looper looper) {
@@ -167,6 +173,7 @@ public class ExLauncher extends Activity {
 
             case MSG_DATA_GET_JSON:
                 getJsonData();
+                this.sendEmptyMessageDelayed(MSG_DATA_GET_JSON, GET_JSON_DELAY);
                 break;
             }
         }
@@ -175,9 +182,6 @@ public class ExLauncher extends Activity {
 
     private static final int MSG_PIC_QUIT = 0;
     private static final int MSG_PIC_GET_DATA = 1;
-    private static final int MSG_PIC_RESET_DATA_FLAG = 2;
-
-    private static final int RESET_DATA_FLAG_INTERVAL = 30 * 60 * 1000;
 
     final class PicHandler extends Handler {
         public PicHandler(Looper looper) {
@@ -194,13 +198,6 @@ public class ExLauncher extends Activity {
             case MSG_PIC_GET_DATA:
                 getDealerLogo();
                 getLatestHitsPic();
-                break;
-
-            // get the picture every half hour
-            case MSG_PIC_RESET_DATA_FLAG:
-                mHasGotPic = false;
-                this.sendEmptyMessageDelayed(MSG_PIC_RESET_DATA_FLAG,
-                        RESET_DATA_FLAG_INTERVAL);
                 break;
             }
         }
@@ -240,6 +237,14 @@ public class ExLauncher extends Activity {
         }
 
     };
+
+    public static void resetMsgStatusAndRefresh(boolean status) {
+        if (mJsonAdData != null) {
+            mJsonAdData.setMsgStatus(status);
+        }
+
+        displayBottomMsgInfo();
+    }
 
     private void getAdvPic() {
         // get all the rotated advertising picture from the url and save them
@@ -326,7 +331,7 @@ public class ExLauncher extends Activity {
         // get other five static pictures from the url and save them
         synchronized (mStaticAdvBitmapMap) {
             Map<String, String> staticAdvMap = new HashMap<String, String>();
-            for (int i = 0; i < MAX_STATIC_AD_PIC_ROTATE_NUM; i++) {
+            for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
                 String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
                 String staticAdvUrl = mSharedPreferences.getString(
                         staticAdvKey, null);
@@ -419,17 +424,17 @@ public class ExLauncher extends Activity {
     }
 
     private void getAdData() {
-        // String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
-        // String macWifi = LauncherUtils.getWifiMac(this);
-        //
-        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
-        // if (TextUtils.isEmpty(macEth) || TextUtils.isEmpty(macWifi)) {
-        // Log.e(TAG, "[getAdData] macEth OR macWifi is empty!");
-        // return;
-        // }
+        String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
+        String macWifi = LauncherUtils.getWifiMac(this);
 
-        String macEth = "00116d063cfc";
-        String macWifi = "a0f4594776de";
+        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        if (TextUtils.isEmpty(macEth) || TextUtils.isEmpty(macWifi)) {
+            Log.e(TAG, "[getAdData] macEth OR macWifi is empty!");
+            return;
+        }
+
+        // String macEth = "00116d063cfc";
+        // String macWifi = "a0f4594776de";
 
         StringBuilder adParamsSb = new StringBuilder();
         adParamsSb.append(MAC_PARAM_ETH + macEth);
@@ -484,44 +489,82 @@ public class ExLauncher extends Activity {
         // advertisement data
         getAdData();
 
-        // get logo and latest hits only one time when first resume
-        if (!mHasGotPic) {
-            mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
-            mHasGotPic = true;
-        }
+        mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
 
         // weather data
         getWeatherData();
 
         mUiHandler.sendEmptyMessage(MSG_UI_CHECK_OTA_UPDATE_INFO);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
-
-        if (mFirstGetData && !hasNetworkConnected()) {
-            // for first time we haven't connected to the network, we should
-            // check always until the network connected
-            mHasGotPic = false;
-        } else {
-            mFirstGetData = false;
-        }
     }
 
     private boolean hasNetworkConnected() {
-        boolean netStatus = false;
+        boolean isWifiConnected = false;
+        boolean isEthConnected = false;
         try {
             ConnectivityManager connectManager = (ConnectivityManager) this
                     .getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetworkInfo = connectManager
-                    .getActiveNetworkInfo();
+            
+            NetworkInfo wifiNetworkInfo = connectManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+            if (wifiNetworkInfo != null) {
+                State wifiState = wifiNetworkInfo.getState();
+                isWifiConnected = (wifiState == State.CONNECTED);
+            }
 
-            if ((activeNetworkInfo != null) && activeNetworkInfo.isAvailable()
-                    && activeNetworkInfo.isConnected()) {
-                netStatus = true;
+            NetworkInfo ethNetworkInfo = connectManager.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
+            if (ethNetworkInfo != null) {
+                State ethState = ethNetworkInfo.getState();
+                isEthConnected = (ethState == State.CONNECTED);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return netStatus;
+        return isWifiConnected || isEthConnected;
+    }
+
+    private void showNewVersionUpdate() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.new_version_available);
+        builder.setPositiveButton(R.string.yes,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface arg0, int arg1) {
+                        // TODO Auto-generated method stub
+                        Intent intent = new Intent(Intent.ACTION_MAIN);
+                        intent.setComponent(new ComponentName("com.otaupdater",
+                                "com.otaupdater.OTAUpdaterActivity"));
+
+                        try {
+                            ExLauncher.this.startActivity(intent);
+                        } catch (ActivityNotFoundException anf) {
+                            Log.e(TAG, "Activity not found!");
+                            anf.printStackTrace();
+
+                            if (mToast != null) {
+                                mToast.cancel();
+                            }
+                            mToast = Toast.makeText(ExLauncher.this,
+                                    "OTAUpdateCenter App Not Found!",
+                                    Toast.LENGTH_SHORT);
+                            mToast.show();
+                        }
+
+                    }
+                });
+
+        builder.setNegativeButton(R.string.later,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int arg1) {
+                        // TODO Auto-generated method stub
+                        mUpdateDialog.dismiss();
+                        mUpdateDialog = null;
+                    }
+                });
+
+        mUpdateDialog = builder.create();
+        mUpdateDialog.show();
     }
 
     private void checkOtaUpdateInfo() {
@@ -529,31 +572,37 @@ public class ExLauncher extends Activity {
                 JsonAdData.FIRMWARE_VERSION, null);
         if (TextUtils.isEmpty(firmwareVer)) {
             logd("[checkOtaUpdateInfo] we haven't got firmware ver from ad data yet!");
-            mBtnOtaUpdateInfo.setVisibility(View.GONE);
+            // mBtnOtaUpdateInfo.setVisibility(View.GONE);
             return;
         }
 
-        String newVersion = getString(R.string.new_version_prefix) + " "
-                + firmwareVer + " " + getString(R.string.new_version_postfix);
+        // String newVersion = getString(R.string.new_version_prefix) + " "
+        // + firmwareVer + " " + getString(R.string.new_version_postfix);
 
         if (TextUtils.isEmpty(mCurrentFirmwareVer)) {
-            mBtnOtaUpdateInfo.setText(newVersion);
-            mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
+            // mBtnOtaUpdateInfo.setText(newVersion);
+            // mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
+            if (mUpdateDialog == null) {
+                showNewVersionUpdate();
+            }
         } else {
             try {
                 int intCurrentVer = Integer.parseInt(mCurrentFirmwareVer);
                 int intNewVer = Integer.parseInt(firmwareVer);
 
                 if (intNewVer > intCurrentVer) {
-                    mBtnOtaUpdateInfo.setText(newVersion);
-                    mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
-                } else {
-                    mBtnOtaUpdateInfo.setVisibility(View.GONE);
+                    // mBtnOtaUpdateInfo.setText(newVersion);
+                    // mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
+                    // } else {
+                    // mBtnOtaUpdateInfo.setVisibility(View.GONE);
+                    if (mUpdateDialog == null) {
+                        showNewVersionUpdate();
+                    }
                 }
             } catch (NumberFormatException nfe) {
                 Log.e(TAG, "[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer
                         + " and " + firmwareVer + " error!");
-                mBtnOtaUpdateInfo.setVisibility(View.GONE);
+                // mBtnOtaUpdateInfo.setVisibility(View.GONE);
             }
         }
     }
@@ -631,13 +680,20 @@ public class ExLauncher extends Activity {
         mTvWind.setVisibility(View.VISIBLE);
     }
 
-    private void displayBottomMsgInfo() {
+    private static void displayBottomMsgInfo() {
         String bottomMsg = mSharedPreferences.getString(JsonAdData.BOTTOM_MSG,
                 null);
         if (!TextUtils.isEmpty(bottomMsg)) {
             mTvMsg.setText(bottomMsg);
             mTvMsg.setVisibility(View.VISIBLE);
-            mBtnRead.setVisibility(View.VISIBLE);
+
+            if ((mJsonAdData != null) && mJsonAdData.isMsgNew()) {
+                mBtnRead.setVisibility(View.GONE);
+                mIbRead.setVisibility(View.VISIBLE);
+            } else {
+                mBtnRead.setVisibility(View.VISIBLE);
+                mIbRead.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -791,7 +847,7 @@ public class ExLauncher extends Activity {
                 logd("[displayStaticAdvPic] mStaticAdvBitmapMap is empty, try to load from the file");
 
                 mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
-                for (int i = 0; i < MAX_STATIC_AD_PIC_ROTATE_NUM; i++) {
+                for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
                     String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
                     Bitmap bitmap = LauncherUtils.loadBitmap(this, staticAdvKey
                             + ".png");
@@ -917,7 +973,6 @@ public class ExLauncher extends Activity {
         mAdvBitmapMap = new HashMap<String, Bitmap>();
         mPVAdvBitmapMap = new HashMap<String, Bitmap>();
         mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
-        mHasGotPic = false;
         mCurrentFirmwareVer = getCurrentFirmwareVer();
         mContext = this;
 
@@ -928,7 +983,12 @@ public class ExLauncher extends Activity {
     protected void onStart() {
         super.onStart();
         logd("[onStart]");
-        mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
+        mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
+
+        if (mFirstGetData) {
+            mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
+            mFirstGetData = false;
+        }
     }
 
     @Override
@@ -1000,7 +1060,12 @@ public class ExLauncher extends Activity {
             if (action.equals(CONNECTIVITY_CHANGED)) {
                 displayStatus();
             } else if (action.equals(Intent.ACTION_TIME_TICK)) {
-                mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
+                // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
+                displayDateAndTime();
+            } else if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)){
+                if (hasNetworkConnected()) {
+                    getJsonData();
+                }
             }
         }
     };
@@ -1014,6 +1079,7 @@ public class ExLauncher extends Activity {
         registerReceiver(mediaReceiver, mediaFilter);
 
         IntentFilter netFilter = new IntentFilter();
+        netFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); 
         netFilter.addAction(CONNECTIVITY_CHANGED);
         netFilter.addAction(Intent.ACTION_TIME_TICK);
         registerReceiver(netReceiver, netFilter);
@@ -1040,7 +1106,7 @@ public class ExLauncher extends Activity {
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
         mBtnOtaUpdateInfo = (Button) findViewById(R.id.btn_ota_update_info);
-        mBtnOtaUpdateInfo.setOnClickListener(new OnClickListener() {
+        mBtnOtaUpdateInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
                 // TODO Auto-generated method stub
@@ -1087,7 +1153,7 @@ public class ExLauncher extends Activity {
     private void initBottomButton() {
         // the bottom buttons
         LinearLayout llWeatherAndStatus = (LinearLayout) findViewById(R.id.ll_bottom);
-        llWeatherAndStatus.getBackground().setAlpha(150);
+        llWeatherAndStatus.getBackground().setAlpha(200);
 
         mIbTv = (BottomImageButton) findViewById(R.id.ib_tv);
         mIbMovies = (BottomImageButton) findViewById(R.id.ib_movies);
@@ -1147,7 +1213,7 @@ public class ExLauncher extends Activity {
     private void initRightSide() {
         // the right side
         LinearLayout llWeatherAndStatus = (LinearLayout) findViewById(R.id.ll_weather_and_status);
-        llWeatherAndStatus.getBackground().setAlpha(100);
+        llWeatherAndStatus.getBackground().setAlpha(150);
 
         mTvTime = (TextView) findViewById(R.id.tv_time);
         mTvDate = (TextView) findViewById(R.id.tv_date);
@@ -1159,6 +1225,7 @@ public class ExLauncher extends Activity {
         mTvWind = (TextView) findViewById(R.id.tv_wind);
         mTvMsg = (TextView) findViewById(R.id.tv_msg);
         mBtnRead = (Button) findViewById(R.id.btn_read);
+        mIbRead = (ImageButton) findViewById(R.id.ib_read);
         mIvWifi = (ImageView) findViewById(R.id.iv_wifi);
         mIvEthernet = (ImageView) findViewById(R.id.iv_ethernet);
         mIvUsb = (ImageView) findViewById(R.id.iv_usb);
@@ -1175,6 +1242,8 @@ public class ExLauncher extends Activity {
                 }
             }
         });
+
+        mIbRead.setOnClickListener(new MsgButtonOnClickListener(this));
     }
 
     private void displayStatus() {
