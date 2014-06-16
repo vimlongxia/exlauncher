@@ -152,6 +152,7 @@ public class ExLauncher extends Activity {
 
     private static SharedPreferences mSharedPreferences;
     private boolean mFirstGetData = true;
+    private boolean mStartGetPic = false;
 
     // insure MSG_UI_DISPLAY_LATEST_HITS msg be sent only once
     private boolean mStartUpdateLatestHits = false;
@@ -212,6 +213,7 @@ public class ExLauncher extends Activity {
             case MSG_PIC_GET_DATA:
                 getDealerLogo();
                 getLatestHitsPic();
+                mStartGetPic = false;
                 break;
 
             case MSG_PIC_CHECK_DATA:
@@ -375,33 +377,34 @@ public class ExLauncher extends Activity {
     }
 
     private void getAdData() {
-        // String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
-        // String macWifi = LauncherUtils.getWifiMac(this);
-        //
-        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
-        // if (TextUtils.isEmpty(macEth)) {
-        // Log.e(TAG, "[getAdData] macEth is empty!");
-        // return;
-        // } else {
-        // macEth = macEth.replace(":", "");
-        // }
-        //
-        // if (TextUtils.isEmpty(macWifi)) {
-        // Log.e(TAG, "[getAdData] macWifi is empty!");
-        // return;
-        // } else {
-        // macWifi = macWifi.replace(":", "");
-        // }
-        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
+        String macWifi = LauncherUtils.getWifiMac(this);
 
-        String macEth = "00116d063cfc";
-        String macWifi = "a0f4594776de";
+        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        if (TextUtils.isEmpty(macEth)) {
+            Log.e(TAG, "[getAdData] macEth is empty!");
+            return;
+        } else {
+            macEth = macEth.replace(":", "");
+        }
+
+        if (TextUtils.isEmpty(macWifi)) {
+            Log.e(TAG, "[getAdData] macWifi is empty!");
+            return;
+        } else {
+            macWifi = macWifi.replace(":", "");
+        }
+        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+
+        // String macEth = "00116d063cfc";
+        // String macWifi = "a0f4594776de";
 
         StringBuilder adParamsSb = new StringBuilder();
         adParamsSb.append(MAC_PARAM_ETH + macEth);
         adParamsSb.append("&");
         adParamsSb.append(MAC_PARAM_WIFI + macWifi);
         String adUrl = JSON_DATA_AD_URL + "?" + adParamsSb.toString();
+        logd("[getAdData] adUrl : " + adUrl);
         JSONObject jsonAdObj = HttpRequest.getDataFromUrl(adUrl);
 
         if (jsonAdObj == null) {
@@ -449,7 +452,10 @@ public class ExLauncher extends Activity {
         // advertisement data
         getAdData();
 
-        mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
+        if (!mStartGetPic) {
+            mStartGetPic = true;
+            mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
+        }
 
         // weather data
         getWeatherData();
@@ -1287,13 +1293,13 @@ public class ExLauncher extends Activity {
         mIbSixth = (BottomImageButton) findViewById(R.id.ib_lh_sixth);
         mIbSeventh = (BottomImageButton) findViewById(R.id.ib_lh_seventh);
 
-         mIbFirst.setOnClickListener(mImageButtonListener);
-         mIbSecond.setOnClickListener(mImageButtonListener);
-         mIbThird.setOnClickListener(mImageButtonListener);
-         mIbForth.setOnClickListener(mImageButtonListener);
-         mIbFifth.setOnClickListener(mImageButtonListener);
-         mIbSixth.setOnClickListener(mImageButtonListener);
-         mIbSeventh.setOnClickListener(mImageButtonListener);
+        mIbFirst.setOnClickListener(mImageButtonListener);
+        mIbSecond.setOnClickListener(mImageButtonListener);
+        mIbThird.setOnClickListener(mImageButtonListener);
+        mIbForth.setOnClickListener(mImageButtonListener);
+        mIbFifth.setOnClickListener(mImageButtonListener);
+        mIbSixth.setOnClickListener(mImageButtonListener);
+        mIbSeventh.setOnClickListener(mImageButtonListener);
 
         // mIbFirst.setOnKeyListener(mImageButtonOnKeyListener);
         // mIbSecond.setOnKeyListener(mImageButtonOnKeyListener);
@@ -1311,13 +1317,13 @@ public class ExLauncher extends Activity {
         mIbSixth.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
         mIbSeventh.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
 
-        // showViewLength(mIbFirst);
-        // showViewLength(mIbSecond);
-        // showViewLength(mIbThird);
-        // showViewLength(mIbForth);
-        // showViewLength(mIbFifth);
-        // showViewLength(mIbSixth);
-        // showViewLength(mIbSeventh);
+        showViewLength(mIbFirst);
+        showViewLength(mIbSecond);
+        showViewLength(mIbThird);
+        showViewLength(mIbForth);
+        showViewLength(mIbFifth);
+        showViewLength(mIbSixth);
+        showViewLength(mIbSeventh);
     }
 
     private void initRightSide() {
