@@ -7,6 +7,7 @@ import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
 import java.io.File;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,6 +41,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -105,7 +107,8 @@ public class ExLauncher extends Activity {
     private ImageView mIvUsb;
 
     private ImageButtonOnClickListener mImageButtonListener;
-    private OnFocusChangeListener mImageButtonOnFocusChangedListener;
+    private OnFocusChangeListener mImageButtonOnFocusChangeListener;
+    private View.OnKeyListener mImageButtonOnKeyListener;
     private BottomImageButton mImageButtonFocus;
     private String mCurrentFirmwareVer;
     private Toast mToast;
@@ -121,7 +124,6 @@ public class ExLauncher extends Activity {
 
     private static final String EXTERNAL_STORAGE = "/storage/external_storage";
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
-    private static final String CONNECTIVITY_CHANGED = "android.net.conn.CONNECTIVITY_CHANGE";
 
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/fitv.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
@@ -130,6 +132,10 @@ public class ExLauncher extends Activity {
     public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
     private static final int MAX_STATIC_AD_PIC_NUM = 5;
+
+    private enum PicType {
+        PIC_AD, PIC_VIDEO_AD, PIC_STATIC
+    };
 
     private int mAdvPicIndex;
     private static String mKeyAdv;
@@ -158,6 +164,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_DATA_GET_JSON = 1;
 
     private static final int GET_JSON_DELAY = 15 * 60 * 1000;
+    private static final int GET_JSON_DELAY_FOR_NETRECEIVER = 2 * 1000;
 
     final class DataHandler extends Handler {
         public DataHandler(Looper looper) {
@@ -173,7 +180,13 @@ public class ExLauncher extends Activity {
 
             case MSG_DATA_GET_JSON:
                 getJsonData();
-                this.sendEmptyMessageDelayed(MSG_DATA_GET_JSON, GET_JSON_DELAY);
+
+                logd("MSG_DATA_GET_JSON mFirstGetData : " + mFirstGetData);
+                if (mFirstGetData) {
+                    this.sendEmptyMessageDelayed(MSG_DATA_GET_JSON,
+                            GET_JSON_DELAY);
+                    mFirstGetData = false;
+                }
                 break;
             }
         }
@@ -182,6 +195,7 @@ public class ExLauncher extends Activity {
 
     private static final int MSG_PIC_QUIT = 0;
     private static final int MSG_PIC_GET_DATA = 1;
+    private static final int MSG_PIC_CHECK_DATA = 2;
 
     final class PicHandler extends Handler {
         public PicHandler(Looper looper) {
@@ -199,11 +213,16 @@ public class ExLauncher extends Activity {
                 getDealerLogo();
                 getLatestHitsPic();
                 break;
+
+            case MSG_PIC_CHECK_DATA:
+                checkLatestHitsPic();
+                break;
             }
         }
 
     }
 
+    private static final int MSG_UI_QUIT = 0;
     private static final int MSG_UI_DISPLAY_LATEST_HITS = 1;
     private static final int MSG_UI_DISPLAY_LOGO = 2;
     private static final int MSG_UI_CHECK_OTA_UPDATE_INFO = 3;
@@ -216,6 +235,10 @@ public class ExLauncher extends Activity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+            case MSG_UI_QUIT:
+                this.getLooper().quit();
+                break;
+
             case MSG_UI_DISPLAY_LATEST_HITS:
                 displayLatestHits();
                 this.sendEmptyMessageDelayed(MSG_UI_DISPLAY_LATEST_HITS,
@@ -246,157 +269,85 @@ public class ExLauncher extends Activity {
         displayBottomMsgInfo();
     }
 
-    private void getAdvPic() {
-        // get all the rotated advertising picture from the url and save them
-        synchronized (mAdvBitmapMap) {
-            Map<String, String> advMap = new HashMap<String, String>();
-            for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
-                String advKey = AD_PIC_PREFIX + (i + 1);
-                String advUrl = mSharedPreferences.getString(advKey, null);
-
-                logd("[getAdvPic] advKey : " + advKey + ", advUrl : " + advUrl);
-                if (!TextUtils.isEmpty(advUrl)) {
-                    advMap.put(advKey, advUrl);
-                }
-            }
-
-            logd("[getAdvPic] advMap : " + advMap);
-            if (advMap.size() == 0) {
-                logd("[getAdvPic] we don't get any adv url from ad data!");
-                return;
-            }
-
-            InputStream isBitmap = null;
-            mAdvBitmapMap = new HashMap<String, Bitmap>();
-            for (int i = 0; i < advMap.size(); i++) {
-                String advKey = AD_PIC_PREFIX + (i + 1);
-                String advUrl = advMap.get(advKey);
-                isBitmap = HttpRequest.getStreamFromUrl(advUrl);
-
-                if (isBitmap == null) {
-                    logd("[getAdvPic] error when getting logo on " + advUrl);
-                    continue;
-                }
-
-                Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
-                if (bitmap != null) {
-                    mAdvBitmapMap.put(advKey, bitmap);
-                    LauncherUtils.saveBitmap(this, bitmap, advKey + ".png");
-                }
-            }
+    private void getLatestPic(final PicType picType) {
+        int picMaxSize = -1;
+        String picPrefix = null;
+        if (picType == PicType.PIC_AD) {
+            picMaxSize = MAX_AD_PIC_ROTATE_NUM;
+            picPrefix = AD_PIC_PREFIX;
+        } else if (picType == PicType.PIC_VIDEO_AD) {
+            picMaxSize = MAX_VIDEO_PIC_ROTATE_NUM;
+            picPrefix = PVAD_PIC_PREFIX;
+        } else if (picType == PicType.PIC_STATIC) {
+            picMaxSize = MAX_STATIC_AD_PIC_NUM;
+            picPrefix = STATIC_AD_PIC_PREFIX;
         }
-    }
 
-    private void getPVAdvPic() {
-        // get all the rotated video picture from the url and save them
-        synchronized (mPVAdvBitmapMap) {
-            Map<String, String> pvadvMap = new HashMap<String, String>();
-            for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
-                String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
-                String pvadvUrl = mSharedPreferences.getString(pvadvKey, null);
+        synchronized (ExLauncher.this) {
+            Map<String, String> picMap = new HashMap<String, String>();
+            for (int i = 0; i < picMaxSize; i++) {
+                String picKey = picPrefix + (i + 1);
+                String picUrl = mSharedPreferences.getString(picKey, null);
 
-                if (!TextUtils.isEmpty(pvadvUrl)) {
-                    pvadvMap.put(pvadvKey, pvadvUrl);
+                logd("[getLatestPic] picKey : " + picKey + ", picUrl : "
+                        + picUrl);
+                if (!TextUtils.isEmpty(picUrl)) {
+                    picMap.put(picKey, picUrl);
                 }
             }
 
-            logd("[getPVAdvPic] pvadvMap : " + pvadvMap);
-            if (pvadvMap.size() == 0) {
-                logd("[getPVAdvPic] we don't get any adv url from ad data!");
+            if (picMap.size() == 0) {
+                logw("[getLatestPic] we don't get any picture url of type "
+                        + picType + " from ad data!");
                 return;
             }
 
             InputStream isBitmap = null;
-            mPVAdvBitmapMap = new HashMap<String, Bitmap>();
-            for (int i = 0; i < pvadvMap.size(); i++) {
-                String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
-                String pvadvUrl = pvadvMap.get(pvadvKey);
-                isBitmap = HttpRequest.getStreamFromUrl(pvadvUrl);
+            Map<String, Bitmap> mapBitmap = null;
+            if (picType == PicType.PIC_AD) {
+                mAdvBitmapMap = new HashMap<String, Bitmap>();
+                mapBitmap = mAdvBitmapMap;
+            } else if (picType == PicType.PIC_VIDEO_AD) {
+                mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+                mapBitmap = mPVAdvBitmapMap;
+            } else if (picType == PicType.PIC_STATIC) {
+                mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+                mapBitmap = mStaticAdvBitmapMap;
+            }
+
+            for (int i = 0; i < picMap.size(); i++) {
+                String key = picPrefix + (i + 1);
+                String url = picMap.get(key);
+                isBitmap = HttpRequest.getStreamFromUrl(url);
 
                 if (isBitmap == null) {
-                    logd("[getPVAdvPic] error when getting logo on " + pvadvUrl);
+                    logw("[getLatestPic] error when getting logo on " + url
+                            + " for key : " + key);
                     continue;
                 }
 
                 Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
                 if (bitmap != null) {
-                    mPVAdvBitmapMap.put(pvadvKey, bitmap);
-                    LauncherUtils.saveBitmap(this, bitmap, pvadvKey + ".png");
-                }
-            }
-        }
-    }
-
-    private void getStaticAdvPic() {
-        // get other five static pictures from the url and save them
-        synchronized (mStaticAdvBitmapMap) {
-            Map<String, String> staticAdvMap = new HashMap<String, String>();
-            for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
-                String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
-                String staticAdvUrl = mSharedPreferences.getString(
-                        staticAdvKey, null);
-
-                if (!TextUtils.isEmpty(staticAdvUrl)) {
-                    staticAdvMap.put(staticAdvKey, staticAdvUrl);
-                }
-            }
-
-            logd("[getStaticAdvPic] staticAdvMap : " + staticAdvMap);
-            if (staticAdvMap.size() == 0) {
-                logd("[getStaticAdvPic] we don't get any adv url from ad data!");
-                return;
-            }
-
-            InputStream isBitmap = null;
-            mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
-            for (int i = 0; i < staticAdvMap.size(); i++) {
-                String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
-                String staticAdvUrl = staticAdvMap.get(staticAdvKey);
-                isBitmap = HttpRequest.getStreamFromUrl(staticAdvUrl);
-
-                if (isBitmap == null) {
-                    logd("[getStaticAdvPic] error when getting logo on "
-                            + staticAdvUrl);
-                    continue;
-                }
-
-                Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
-                if (bitmap != null) {
-                    mStaticAdvBitmapMap.put(staticAdvKey, bitmap);
-                    LauncherUtils.saveBitmap(this, bitmap, staticAdvKey
+                    mapBitmap.put(key, bitmap);
+                    LauncherUtils.saveBitmap(ExLauncher.this, bitmap, key
                             + ".png");
+                    logi("[getLatestPic] " + key + ".png"
+                            + " has been downloaded.");
                 }
             }
         }
     }
 
     private void getLatestHitsPic() {
-        // get advertisement picture
-        new Thread() {
-            @Override
-            public void run() {
-                getAdvPic();
-            }
-        }.start();
+        getLatestPic(PicType.PIC_VIDEO_AD);
+        getLatestPic(PicType.PIC_AD);
+        getLatestPic(PicType.PIC_STATIC);
+    }
 
-        // get video ad picture
-        new Thread() {
-            @Override
-            public void run() {
-                getPVAdvPic();
-            }
-        }.start();
-
-        // get other five advertisement picture
-        new Thread() {
-            @Override
-            public void run() {
-                getStaticAdvPic();
-            }
-        }.start();
-
-        // we already start ui updating when onResume
-        // mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
+    private void checkLatestHitsPic() {
+        checkPicAllDownloadedByType(PicType.PIC_VIDEO_AD);
+        checkPicAllDownloadedByType(PicType.PIC_AD);
+        checkPicAllDownloadedByType(PicType.PIC_STATIC);
     }
 
     private void getDealerLogo() {
@@ -404,13 +355,13 @@ public class ExLauncher extends Activity {
                 JsonAdData.DEALER_LOGO, null);
 
         if (TextUtils.isEmpty(logoUrlString)) {
-            Log.e(TAG, "[getDealerLogo] logo url is empty!");
+            logw("[getDealerLogo] logo url is empty!");
             return;
         }
 
         InputStream isBitmap = HttpRequest.getStreamFromUrl(logoUrlString);
         if (isBitmap == null) {
-            logd("[getDealerLogo] error when getting logo on " + logoUrlString);
+            logw("[getDealerLogo] error when getting logo on " + logoUrlString);
             return;
         }
 
@@ -424,17 +375,27 @@ public class ExLauncher extends Activity {
     }
 
     private void getAdData() {
-        String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
-        String macWifi = LauncherUtils.getWifiMac(this);
+        // String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
+        // String macWifi = LauncherUtils.getWifiMac(this);
+        //
+        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        // if (TextUtils.isEmpty(macEth)) {
+        // Log.e(TAG, "[getAdData] macEth is empty!");
+        // return;
+        // } else {
+        // macEth = macEth.replace(":", "");
+        // }
+        //
+        // if (TextUtils.isEmpty(macWifi)) {
+        // Log.e(TAG, "[getAdData] macWifi is empty!");
+        // return;
+        // } else {
+        // macWifi = macWifi.replace(":", "");
+        // }
+        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
 
-        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
-        if (TextUtils.isEmpty(macEth) || TextUtils.isEmpty(macWifi)) {
-            Log.e(TAG, "[getAdData] macEth OR macWifi is empty!");
-            return;
-        }
-
-        // String macEth = "00116d063cfc";
-        // String macWifi = "a0f4594776de";
+        String macEth = "00116d063cfc";
+        String macWifi = "a0f4594776de";
 
         StringBuilder adParamsSb = new StringBuilder();
         adParamsSb.append(MAC_PARAM_ETH + macEth);
@@ -444,11 +405,11 @@ public class ExLauncher extends Activity {
         JSONObject jsonAdObj = HttpRequest.getDataFromUrl(adUrl);
 
         if (jsonAdObj == null) {
-            logd("[getAdData] can not get ad data from " + adUrl);
+            logw("[getAdData] can not get ad data from " + adUrl);
             return;
         }
 
-        logd("jsonAdObj : " + jsonAdObj.toString());
+        // logd("jsonAdObj : " + jsonAdObj.toString());
         mJsonAdData = new JsonAdData(this, jsonAdObj);
         mJsonAdData.parseAndSaveData();
         logd(mJsonAdData.toString());
@@ -458,8 +419,7 @@ public class ExLauncher extends Activity {
         String city = mSharedPreferences.getString(JsonAdData.CITY, null);
         String country = mSharedPreferences.getString(JsonAdData.COUNTRY, null);
         if (TextUtils.isEmpty(city) || TextUtils.isEmpty(country)) {
-            Log.w(TAG,
-                    "[getWeatherData] we didn't get city and country from ad data yet!");
+            logw("[getWeatherData] we didn't get city and country from ad data yet!");
             return;
         }
 
@@ -475,11 +435,11 @@ public class ExLauncher extends Activity {
         JSONObject jsonWeatherObj = HttpRequest.getDataFromUrl(weatherUrl);
 
         if (jsonWeatherObj == null) {
-            logd("[getAdData] can not get weather data from " + weatherUrl);
+            logw("[getAdData] can not get weather data from " + weatherUrl);
             return;
         }
 
-        logd("jsonWeatherObj : " + jsonWeatherObj.toString());
+        // logd("jsonWeatherObj : " + jsonWeatherObj.toString());
         mJsonWeatherData = new JsonWeatherData(this, jsonWeatherObj);
         mJsonWeatherData.parseAndSaveData();
         logd(mJsonWeatherData.toString());
@@ -499,28 +459,51 @@ public class ExLauncher extends Activity {
     }
 
     private boolean hasNetworkConnected() {
+        boolean isnetworkConnected = false;
         boolean isWifiConnected = false;
         boolean isEthConnected = false;
+        boolean isMobileConnected = false;
         try {
             ConnectivityManager connectManager = (ConnectivityManager) this
                     .getSystemService(Context.CONNECTIVITY_SERVICE);
-            
-            NetworkInfo wifiNetworkInfo = connectManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+            NetworkInfo networkInfo = connectManager.getActiveNetworkInfo();
+            if (networkInfo != null) {
+                State networkState = networkInfo.getState();
+                isnetworkConnected = (networkState == State.CONNECTED);
+            }
+            logd("[hasNetworkConnected] isnetworkConnected : "
+                    + isnetworkConnected);
+
+            NetworkInfo wifiNetworkInfo = connectManager
+                    .getNetworkInfo(ConnectivityManager.TYPE_WIFI);
             if (wifiNetworkInfo != null) {
                 State wifiState = wifiNetworkInfo.getState();
                 isWifiConnected = (wifiState == State.CONNECTED);
             }
+            logd("[hasNetworkConnected] isWifiConnected : " + isWifiConnected);
 
-            NetworkInfo ethNetworkInfo = connectManager.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
+            NetworkInfo ethNetworkInfo = connectManager
+                    .getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
             if (ethNetworkInfo != null) {
                 State ethState = ethNetworkInfo.getState();
                 isEthConnected = (ethState == State.CONNECTED);
             }
+            logd("[hasNetworkConnected] isEthConnected : " + isEthConnected);
+
+            NetworkInfo mobileNetworkInfo = connectManager
+                    .getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+            if (mobileNetworkInfo != null) {
+                State mobileState = mobileNetworkInfo.getState();
+                isMobileConnected = (mobileState == State.CONNECTED);
+            }
+            logd("[hasNetworkConnected] isMobileConnected : "
+                    + isMobileConnected);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return isWifiConnected || isEthConnected;
+        return isWifiConnected || isEthConnected || isnetworkConnected;
     }
 
     private void showNewVersionUpdate() {
@@ -538,14 +521,14 @@ public class ExLauncher extends Activity {
                         try {
                             ExLauncher.this.startActivity(intent);
                         } catch (ActivityNotFoundException anf) {
-                            Log.e(TAG, "Activity not found!");
+                            loge("Activity not found!");
                             anf.printStackTrace();
 
                             if (mToast != null) {
                                 mToast.cancel();
                             }
                             mToast = Toast.makeText(ExLauncher.this,
-                                    "OTAUpdateCenter App Not Found!",
+                                    R.string.otaupdatecenter_not_found,
                                     Toast.LENGTH_SHORT);
                             mToast.show();
                         }
@@ -571,38 +554,25 @@ public class ExLauncher extends Activity {
         String firmwareVer = mSharedPreferences.getString(
                 JsonAdData.FIRMWARE_VERSION, null);
         if (TextUtils.isEmpty(firmwareVer)) {
-            logd("[checkOtaUpdateInfo] we haven't got firmware ver from ad data yet!");
-            // mBtnOtaUpdateInfo.setVisibility(View.GONE);
+            logw("[checkOtaUpdateInfo] we haven't got firmware ver from ad data yet!");
             return;
         }
 
-        // String newVersion = getString(R.string.new_version_prefix) + " "
-        // + firmwareVer + " " + getString(R.string.new_version_postfix);
-
         if (TextUtils.isEmpty(mCurrentFirmwareVer)) {
-            // mBtnOtaUpdateInfo.setText(newVersion);
-            // mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
             if (mUpdateDialog == null) {
                 showNewVersionUpdate();
             }
         } else {
             try {
                 int intCurrentVer = Integer.parseInt(mCurrentFirmwareVer);
-                int intNewVer = Integer.parseInt(firmwareVer);
+                int intVerFromJson = Integer.parseInt(firmwareVer);
 
-                if (intNewVer > intCurrentVer) {
-                    // mBtnOtaUpdateInfo.setText(newVersion);
-                    // mBtnOtaUpdateInfo.setVisibility(View.VISIBLE);
-                    // } else {
-                    // mBtnOtaUpdateInfo.setVisibility(View.GONE);
-                    if (mUpdateDialog == null) {
-                        showNewVersionUpdate();
-                    }
+                if ((intVerFromJson > intCurrentVer) && (mUpdateDialog == null)) {
+                    showNewVersionUpdate();
                 }
             } catch (NumberFormatException nfe) {
-                Log.e(TAG, "[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer
+                loge("[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer
                         + " and " + firmwareVer + " error!");
-                // mBtnOtaUpdateInfo.setVisibility(View.GONE);
             }
         }
     }
@@ -719,10 +689,115 @@ public class ExLauncher extends Activity {
         return mKeyPVAdv;
     }
 
+    private void checkPicAllDownloadedByType(final PicType picType) {
+        int picMaxSize = -1;
+        Map<String, Bitmap> mapBitmap = null;
+        String picPrefix = null;
+        if (picType == PicType.PIC_AD) {
+            picMaxSize = MAX_AD_PIC_ROTATE_NUM;
+            mapBitmap = mAdvBitmapMap;
+            picPrefix = AD_PIC_PREFIX;
+        } else if (picType == PicType.PIC_VIDEO_AD) {
+            picMaxSize = MAX_VIDEO_PIC_ROTATE_NUM;
+            mapBitmap = mPVAdvBitmapMap;
+            picPrefix = PVAD_PIC_PREFIX;
+        } else if (picType == PicType.PIC_STATIC) {
+            picMaxSize = MAX_STATIC_AD_PIC_NUM;
+            mapBitmap = mStaticAdvBitmapMap;
+            picPrefix = STATIC_AD_PIC_PREFIX;
+        }
+
+        if ((picMaxSize == -1) || TextUtils.isEmpty(picPrefix)) {
+            loge("[checkPicAllDownloaded] param picType : " + picType
+                    + " error!");
+            return;
+        }
+
+        if ((mapBitmap != null) && (mapBitmap.size() == picMaxSize)) {
+            logi("[checkPicAllDownloaded] all picture for type " + picType
+                    + " have been downloaded.");
+            return;
+        }
+
+        synchronized (ExLauncher.this) {
+            final ArrayList<String> needToDownloadKey = new ArrayList<String>();
+            final Map<String, String> needToDownloadUrl = new HashMap<String, String>();
+            for (int i = 0; i < picMaxSize; i++) {
+                String picKey = picPrefix + (i + 1);
+                Bitmap bitmap = LauncherUtils.loadBitmap(this, picKey + ".png");
+                if (bitmap == null) {
+                    logw("[checkPicAllDownloaded] " + picKey + ".png"
+                            + " has not been downloaded.");
+                    String picUrl = mSharedPreferences.getString(picKey, null);
+                    if (TextUtils.isEmpty(picUrl)) {
+                        logw("[checkPicAllDownloaded] picUrl for " + picKey
+                                + ".png" + " is empty. just continue.");
+                        continue;
+                    }
+
+                    needToDownloadKey.add(picKey);
+                    needToDownloadUrl.put(picKey, picUrl);
+                } else {
+                    bitmap.recycle();
+                }
+            }
+
+            if (needToDownloadKey.size() > 0) {
+                logd("[checkPicAllDownloaded] start to download the rest "
+                        + needToDownloadKey.size() + " picture(s) for type "
+                        + picType);
+                if (mapBitmap == null) {
+                    if (picType == PicType.PIC_AD) {
+                        mAdvBitmapMap = new HashMap<String, Bitmap>();
+                        mapBitmap = mAdvBitmapMap;
+                    } else if (picType == PicType.PIC_VIDEO_AD) {
+                        mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+                        mapBitmap = mPVAdvBitmapMap;
+                    } else if (picType == PicType.PIC_STATIC) {
+                        mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+                        mapBitmap = mStaticAdvBitmapMap;
+                    }
+                }
+                final Map<String, Bitmap> picBitmap = mapBitmap;
+
+                new Thread("checkPicAllDownloaded_" + picType) {
+                    @Override
+                    public void run() {
+                        // TODO Auto-generated method stub
+                        for (int i = 0; i < needToDownloadKey.size(); i++) {
+                            String key = needToDownloadKey.get(i);
+                            String url = needToDownloadUrl.get(key);
+                            InputStream isBitmap = HttpRequest
+                                    .getStreamFromUrl(url);
+
+                            if (isBitmap == null) {
+                                logw("[thread checkPicAllDownloaded_" + picType
+                                        + "] error when getting picture on "
+                                        + url);
+                                continue;
+                            }
+
+                            Bitmap bitmap = BitmapFactory
+                                    .decodeStream(isBitmap);
+                            if (bitmap != null) {
+                                LauncherUtils.saveBitmap(ExLauncher.this,
+                                        bitmap, key + ".png");
+                                picBitmap.put(key, bitmap);
+                                logi("[checkPicAllDownloaded] " + key + ".png"
+                                        + " has been downloaded.");
+                            }
+                        }
+                    }
+                }.start();
+            }
+        }
+    }
+
     private void displayAdvPic() {
         synchronized (mAdvBitmapMap) {
-            if ((mAdvBitmapMap == null) || mAdvBitmapMap.isEmpty()) {
-                logd("[displayAdvPic] mAdvBitmapMap is empty, try to load from the file");
+            if ((mAdvBitmapMap == null)
+                    || (mAdvBitmapMap.size() < MAX_AD_PIC_ROTATE_NUM)) {
+                logd("[displayAdvPic] mAdvBitmapMap is not full, try to load from the file");
 
                 mAdvBitmapMap = new HashMap<String, Bitmap>();
                 for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
@@ -782,8 +857,9 @@ public class ExLauncher extends Activity {
 
     private void displayPVAdvPic() {
         synchronized (mPVAdvBitmapMap) {
-            if ((mPVAdvBitmapMap == null) || mPVAdvBitmapMap.isEmpty()) {
-                logd("[displayPVAdvPic] mPVAdvBitmapMap is empty, try to load from the file");
+            if ((mPVAdvBitmapMap == null)
+                    || (mPVAdvBitmapMap.size() < MAX_VIDEO_PIC_ROTATE_NUM)) {
+                logd("[displayPVAdvPic] mPVAdvBitmapMap is not full, try to load from the file");
 
                 mPVAdvBitmapMap = new HashMap<String, Bitmap>();
                 for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
@@ -843,8 +919,9 @@ public class ExLauncher extends Activity {
 
     private void displayStaticAdvPic() {
         synchronized (mStaticAdvBitmapMap) {
-            if ((mStaticAdvBitmapMap == null) || mStaticAdvBitmapMap.isEmpty()) {
-                logd("[displayStaticAdvPic] mStaticAdvBitmapMap is empty, try to load from the file");
+            if ((mStaticAdvBitmapMap == null)
+                    || (mStaticAdvBitmapMap.size() < MAX_STATIC_AD_PIC_NUM)) {
+                logd("[displayStaticAdvPic] mStaticAdvBitmapMap is not full, try to load from the file");
 
                 mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
                 for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
@@ -910,7 +987,7 @@ public class ExLauncher extends Activity {
         }
 
         if (mLogoBitmap == null) {
-            logd("[displayLogo] we don't get logo from ad data yet!");
+            logw("[displayLogo] we don't get logo from ad data yet!");
             return;
         }
 
@@ -950,6 +1027,7 @@ public class ExLauncher extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        logd("[onCreate]");
 
         setContentView(R.layout.ex_launcher);
 
@@ -983,17 +1061,20 @@ public class ExLauncher extends Activity {
     protected void onStart() {
         super.onStart();
         logd("[onStart]");
-        mPicHandler.sendEmptyMessage(MSG_PIC_GET_DATA);
 
-        if (mFirstGetData) {
-            mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
-            mFirstGetData = false;
-        }
+        // if (mFirstGetData) {
+        // Message msg = mDataHandler.obtainMessage(MSG_DATA_GET_JSON, true);
+        // msg.sendToTarget();
+        // mFirstGetData = false;
+        // }
+
+        showScreenLength();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        logd("[onResume]");
         displayStatus();
         displayRightSide();
         displayLogo();
@@ -1007,6 +1088,7 @@ public class ExLauncher extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        logd("[onPause]");
     }
 
     @Override
@@ -1018,6 +1100,7 @@ public class ExLauncher extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        logd("[onDestroy]");
         unregisterStatusReceiver();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
         mPicHandler.sendEmptyMessage(MSG_PIC_QUIT);
@@ -1055,16 +1138,17 @@ public class ExLauncher extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Log.d(TAG, "netReceiver action = " + action);
+            logd("netReceiver action : " + action);
 
-            if (action.equals(CONNECTIVITY_CHANGED)) {
-                displayStatus();
-            } else if (action.equals(Intent.ACTION_TIME_TICK)) {
-                // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
+            if (action.equals(Intent.ACTION_TIME_TICK)) {
                 displayDateAndTime();
-            } else if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)){
+                mPicHandler.sendEmptyMessage(MSG_PIC_CHECK_DATA);
+            } else {
+                displayStatus();
                 if (hasNetworkConnected()) {
-                    getJsonData();
+                    logd("[netReceiver] hasNetworkConnected : true");
+                    mDataHandler.sendEmptyMessageDelayed(MSG_DATA_GET_JSON,
+                            GET_JSON_DELAY_FOR_NETRECEIVER);
                 }
             }
         }
@@ -1079,8 +1163,7 @@ public class ExLauncher extends Activity {
         registerReceiver(mediaReceiver, mediaFilter);
 
         IntentFilter netFilter = new IntentFilter();
-        netFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); 
-        netFilter.addAction(CONNECTIVITY_CHANGED);
+        netFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         netFilter.addAction(Intent.ACTION_TIME_TICK);
         registerReceiver(netReceiver, netFilter);
     }
@@ -1091,8 +1174,9 @@ public class ExLauncher extends Activity {
     }
 
     private void initRes() {
+        mImageButtonOnKeyListener = new ImageButtonOnKeyListener(this);
         mImageButtonListener = new ImageButtonOnClickListener(this);
-        mImageButtonOnFocusChangedListener = new OnFocusChangeListener() {
+        mImageButtonOnFocusChangeListener = new OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
                 Log.d(TAG, "view : " + view + ", hasFocus : " + hasFocus);
@@ -1173,14 +1257,24 @@ public class ExLauncher extends Activity {
         mIbApps.setOnClickListener(mImageButtonListener);
         mIbSetting.setOnClickListener(mImageButtonListener);
 
-        mIbTv.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbMovies.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbDrama.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbYoutube.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbGames.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbRadio.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbApps.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbSetting.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
+        mIbTv.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbMovies.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbDrama.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbYoutube.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbGames.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbRadio.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbApps.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbSetting.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+
+        showViewLength(mIbTv);
+        showViewLength(mIbMovies);
+        showViewLength(mIbDrama);
+        showViewLength(mIbYoutube);
+        showViewLength(mIbYoutube);
+        showViewLength(mIbGames);
+        showViewLength(mIbRadio);
+        showViewLength(mIbApps);
+        showViewLength(mIbSetting);
     }
 
     private void initLatestHits() {
@@ -1193,21 +1287,37 @@ public class ExLauncher extends Activity {
         mIbSixth = (BottomImageButton) findViewById(R.id.ib_lh_sixth);
         mIbSeventh = (BottomImageButton) findViewById(R.id.ib_lh_seventh);
 
-        mIbFirst.setOnClickListener(mImageButtonListener);
-        mIbSecond.setOnClickListener(mImageButtonListener);
-        mIbThird.setOnClickListener(mImageButtonListener);
-        mIbForth.setOnClickListener(mImageButtonListener);
-        mIbFifth.setOnClickListener(mImageButtonListener);
-        mIbSixth.setOnClickListener(mImageButtonListener);
-        mIbSeventh.setOnClickListener(mImageButtonListener);
+         mIbFirst.setOnClickListener(mImageButtonListener);
+         mIbSecond.setOnClickListener(mImageButtonListener);
+         mIbThird.setOnClickListener(mImageButtonListener);
+         mIbForth.setOnClickListener(mImageButtonListener);
+         mIbFifth.setOnClickListener(mImageButtonListener);
+         mIbSixth.setOnClickListener(mImageButtonListener);
+         mIbSeventh.setOnClickListener(mImageButtonListener);
 
-        mIbFirst.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbSecond.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbThird.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbForth.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbFifth.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbSixth.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
-        mIbSeventh.setOnFocusChangeListener(mImageButtonOnFocusChangedListener);
+        // mIbFirst.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbSecond.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbThird.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbForth.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbFifth.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbSixth.setOnKeyListener(mImageButtonOnKeyListener);
+        // mIbSeventh.setOnKeyListener(mImageButtonOnKeyListener);
+
+        mIbFirst.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbSecond.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbThird.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbForth.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbFifth.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbSixth.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+        mIbSeventh.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
+
+        // showViewLength(mIbFirst);
+        // showViewLength(mIbSecond);
+        // showViewLength(mIbThird);
+        // showViewLength(mIbForth);
+        // showViewLength(mIbFifth);
+        // showViewLength(mIbSixth);
+        // showViewLength(mIbSeventh);
     }
 
     private void initRightSide() {
@@ -1295,7 +1405,70 @@ public class ExLauncher extends Activity {
         return false;
     }
 
+    private void showScreenLength() {
+        // »ñÈ¡ÆÁÄ»¿í¸ß£¨·½·¨1£©
+        int screenWidth = getWindowManager().getDefaultDisplay().getWidth(); // ÆÁÄ»¿í£¨ÏñËØ£¬Èç£º480px£©
+        int screenHeight = getWindowManager().getDefaultDisplay().getHeight(); // ÆÁÄ»¸ß£¨ÏñËØ£¬Èç£º800p£©
+        logi("first_method screenWidth=" + screenWidth + "; screenHeight="
+                + screenHeight);
+
+        // »ñÈ¡ÆÁÄ»ÃÜ¶È£¨·½·¨2£©
+        DisplayMetrics dm = new DisplayMetrics();
+        dm = getResources().getDisplayMetrics();
+        float density = dm.density; // ÆÁÄ»ÃÜ¶È£¨ÏñËØ±ÈÀý£º0.75/1.0/1.5/2.0£©
+        int densityDPI = dm.densityDpi; // ÆÁÄ»ÃÜ¶È£¨Ã¿´çÏñËØ£º120/160/240/320£©
+        float xdpi = dm.xdpi;
+        float ydpi = dm.ydpi;
+        logi("second_method xdpi=" + xdpi + "; ydpi=" + ydpi);
+        logi("second_method density=" + density + "; densityDPI=" + densityDPI);
+        screenWidth = dm.widthPixels; // ÆÁÄ»¿í£¨ÏñËØ£¬Èç£º480px£©
+        screenHeight = dm.heightPixels; // ÆÁÄ»¸ß£¨ÏñËØ£¬Èç£º800px£©
+        logi("second_method screenWidth=" + screenWidth + "; screenHeight="
+                + screenHeight);
+
+        // »ñÈ¡ÆÁÄ»ÃÜ¶È£¨·½·¨3£©
+        dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        density = dm.density; // ÆÁÄ»ÃÜ¶È£¨ÏñËØ±ÈÀý£º0.75/1.0/1.5/2.0£©
+        densityDPI = dm.densityDpi; // ÆÁÄ»ÃÜ¶È£¨Ã¿´çÏñËØ£º120/160/240/320£©
+        xdpi = dm.xdpi;
+        ydpi = dm.ydpi;
+        logi("third_method xdpi=" + xdpi + "; ydpi=" + ydpi);
+        logi("third_method density=" + density + "; densityDPI=" + densityDPI);
+        int screenWidthDip = dm.widthPixels; // ÆÁÄ»¿í£¨dip£¬Èç£º320dip£©
+        int screenHeightDip = dm.heightPixels; // ÆÁÄ»¿í£¨dip£¬Èç£º533dip£©
+        logi("third_method screenWidthDip=" + screenWidthDip
+                + "; screenHeightDip=" + screenHeightDip);
+        screenWidth = (int) (dm.widthPixels * density + 0.5f); // ÆÁÄ»¿í£¨px£¬Èç£º480px£©
+        screenHeight = (int) (dm.heightPixels * density + 0.5f); // ÆÁÄ»¸ß£¨px£¬Èç£º800px£©
+        logi("third_method screenWidth=" + screenWidth + "; screenHeight="
+                + screenHeight);
+    }
+
+    private void showViewLength(View v) {
+        int w = View.MeasureSpec.makeMeasureSpec(0,
+                View.MeasureSpec.UNSPECIFIED);
+        int h = View.MeasureSpec.makeMeasureSpec(0,
+                View.MeasureSpec.UNSPECIFIED);
+        v.measure(w, h);
+        int height = v.getMeasuredHeight();
+        int width = v.getMeasuredWidth();
+        logi("width : " + width + ", height : " + height);
+    }
+
+    private static void logi(String strs) {
+        Log.i(TAG, strs);
+    }
+
     private static void logd(String strs) {
-        Log.d(TAG, strs + " --- VIM");
+        Log.d(TAG, strs);
+    }
+
+    private static void logw(String strs) {
+        Log.w(TAG, strs);
+    }
+
+    private static void loge(String strs) {
+        Log.e(TAG, strs);
     }
 }

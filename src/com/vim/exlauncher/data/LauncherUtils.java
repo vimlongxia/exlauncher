@@ -42,10 +42,10 @@ public class LauncherUtils {
         } catch (FileNotFoundException fnfe) {
             Log.e(TAG, "[getEthMac] FileNotFoundException when openning "
                     + filePath);
-            fnfe.printStackTrace();
+            // fnfe.printStackTrace();
         } catch (Exception e) {
             Log.e(TAG, "[getEthMac] Exception when reading " + filePath);
-            e.printStackTrace();
+            // e.printStackTrace();
         }
 
         Log.d(TAG, "[getEthMac] ethMac : " + ethMac);
@@ -92,7 +92,7 @@ public class LauncherUtils {
         } catch (NoSuchElementException e) {
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         } finally {
             if (is != null) {
                 try {
@@ -116,11 +116,11 @@ public class LauncherUtils {
             bitmap = BitmapFactory.decodeStream(is);
         } catch (FileNotFoundException fnfe) {
             Log.e(TAG, "[loadBitmap] " + fileName + " not found!");
-            fnfe.printStackTrace();
+            // fnfe.printStackTrace();
             bitmap = null;
         } catch (Exception e) {
             Log.e(TAG, "[loadBitmap] exception!");
-            e.printStackTrace();
+            // e.printStackTrace();
             bitmap = null;
         }
 
@@ -147,7 +147,7 @@ public class LauncherUtils {
             os.close();
         } catch (Exception e) {
             Log.e(TAG, "[saveBitmap] exception!");
-            e.printStackTrace();
+            // e.printStackTrace();
         }
     }
 }

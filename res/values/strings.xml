@@ -27,4 +27,6 @@
     <string name="yes">Yes</string>
     <string name="later">Later</string>
     <string name="new_version_available">New version of Firmware Available</string>
+    <string name="otaupdatecenter_not_found">OTAUpdateCenter Not Found!</string>
+    <string name="app_not_found">Application Not Found!</string>
 </resources>

@@ -38,6 +38,7 @@ public class ImageButtonOnClickListener implements OnClickListener {
     @Override
     public void onClick(View v) {
         // TODO Auto-generated method stub
+        Log.i(TAG, "[onClick] view : " + v);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
         String url = null;
         Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -193,7 +194,7 @@ public class ImageButtonOnClickListener implements OnClickListener {
             if (mToast != null){
                 mToast.cancel();
             }
-            mToast = Toast.makeText(mContext, "Application Not Found!", Toast.LENGTH_SHORT);
+            mToast = Toast.makeText(mContext, R.string.app_not_found, Toast.LENGTH_SHORT);
             mToast.show();
         }
     }

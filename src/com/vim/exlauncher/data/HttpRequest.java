@@ -20,10 +20,15 @@ import android.util.Log;
 
 public class HttpRequest {
     private static final String TAG = "HttpRequest";
-    
+
     private static final int CONNECT_TIME_OUT = 10 * 1000;
 
     public static InputStream getStreamFromUrl(String strUrl) {
+        if (TextUtils.isEmpty(strUrl)) {
+            Log.d(TAG, "[getStreamFromUrl] url is empty!");
+            return null;
+        }
+
         InputStream is = null;
         try {
             URL url = new URL(strUrl);
@@ -36,7 +41,7 @@ public class HttpRequest {
         } catch (Exception e) {
             Log.e(TAG, "[getStreamFromUrl] error when getting logo on "
                     + strUrl);
-            e.printStackTrace();
+            // e.printStackTrace();
             is = null;
         }
 
@@ -79,8 +84,8 @@ public class HttpRequest {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "[getDataFromUrl] error!");
-            e.printStackTrace();
+            Log.e(TAG, "[getDataFromUrl] error when getting logo on " + url);
+            // e.printStackTrace();
             resultJsonObject = null;
         } finally {
             // 关闭连接 ,释放资源

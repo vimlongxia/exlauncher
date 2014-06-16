@@ -1,5 +1,6 @@
 package com.vim.exlauncher.ui;
 
+import android.R.integer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -70,7 +71,7 @@ public class BottomImageButton extends ImageButton {
                 + layout_height);
 
         ExLauncher.mIvShadow.setImageBitmap(scaleBitmap);
-        ExLauncher.mAlShadow.setBackgroundResource(R.drawable.shadow_bottom);
+        ExLauncher.mAlShadow.setBackgroundResource(getBgDrawableId());
 
         LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT, 0, 0);
@@ -81,4 +82,25 @@ public class BottomImageButton extends ImageButton {
         ExLauncher.mAlShadow.setLayoutParams(lp);
     }
 
+    private int getBgDrawableId(){
+        int bgId = -1;
+        switch(this.getId()){
+        case R.id.ib_tv:
+        case R.id.ib_movies:
+        case R.id.ib_drama:
+        case R.id.ib_youtube:
+        case R.id.ib_games:
+        case R.id.ib_radio:
+        case R.id.ib_apps:
+        case R.id.ib_setting:
+            bgId = R.drawable.shadow_third_forth;
+            break;
+            
+        default:
+            bgId = R.drawable.shadow_bottom;
+            break;
+        }
+        
+        return bgId;
+    }
 }
