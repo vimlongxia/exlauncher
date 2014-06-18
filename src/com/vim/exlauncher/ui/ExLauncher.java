@@ -1059,6 +1059,8 @@ public class ExLauncher extends Activity {
         mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
         mCurrentFirmwareVer = getCurrentFirmwareVer();
         mContext = this;
+        
+        mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
         registerStatusReceiver();
     }
