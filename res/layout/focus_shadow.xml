@@ -10,9 +10,17 @@
 
         <ImageView
             android:id="@+id/iv_shadow_focus"
+            android:contentDescription="@string/app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/shadow" />
+
+        <ImageView
+            android:id="@+id/iv_shadow_focus_for_first"
+            android:contentDescription="@string/app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/video_button_bg" />
     </AbsoluteLayout>
 
 </AbsoluteLayout>

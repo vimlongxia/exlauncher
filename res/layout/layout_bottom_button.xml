@@ -10,7 +10,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="5dp"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
         android:orientation="vertical" >
@@ -22,7 +22,7 @@
             android:gravity="left|center"
             android:paddingBottom="5dp"
             android:paddingLeft="50dp"
-            android:paddingTop="15dp"
+            android:paddingTop="5dp"
             android:singleLine="true"
             android:text="@string/real_time_broadcasting"
             android:textColor="#FFFFFF"
@@ -31,8 +31,8 @@
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="10dp"
             android:contentDescription="@string/app_name"
+            android:paddingBottom="5dp"
             android:src="@drawable/black_down" />
 
         <LinearLayout
@@ -40,10 +40,8 @@
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:orientation="horizontal"
-            android:paddingBottom="@dimen/bottom_button_vertical_margin"
             android:paddingLeft="@dimen/bottom_button_horizontal_margin"
-            android:paddingRight="@dimen/bottom_button_vertical_margin"
-            android:paddingTop="@dimen/bottom_button_horizontal_margin" >
+            android:paddingRight="@dimen/bottom_button_vertical_margin" >
 
             <RelativeLayout
                 android:layout_width="0dp"
