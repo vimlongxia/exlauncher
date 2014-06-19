@@ -399,27 +399,27 @@ public class ExLauncher extends Activity {
     }
 
     private void getAdData() {
-        // String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
-        // String macWifi = LauncherUtils.getWifiMac(this);
-        //
-        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
-        // if (TextUtils.isEmpty(macEth)) {
-        // Log.e(TAG, "[getAdData] macEth is empty!");
-        // return;
-        // } else {
-        // macEth = macEth.replace(":", "");
-        // }
-        //
-        // if (TextUtils.isEmpty(macWifi)) {
-        // Log.e(TAG, "[getAdData] macWifi is empty!");
-        // return;
-        // } else {
-        // macWifi = macWifi.replace(":", "");
-        // }
-        // logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
+        String macWifi = LauncherUtils.getWifiMac(this);
 
-        String macEth = "00116d063cfc";
-        String macWifi = "a0f4594776de";
+        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        if (TextUtils.isEmpty(macEth)) {
+            Log.e(TAG, "[getAdData] macEth is empty!");
+            return;
+        } else {
+            macEth = macEth.replace(":", "");
+        }
+
+        if (TextUtils.isEmpty(macWifi)) {
+            Log.e(TAG, "[getAdData] macWifi is empty!");
+            return;
+        } else {
+            macWifi = macWifi.replace(":", "");
+        }
+        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+
+        // String macEth = "00116d063cfc";
+        // String macWifi = "a0f4594776de";
 
         StringBuilder adParamsSb = new StringBuilder();
         adParamsSb.append(MAC_PARAM_ETH + macEth);
