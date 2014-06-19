@@ -8,16 +8,35 @@
     <RelativeLayout
         android:id="@+id/rl_main"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
-        android:layout_marginLeft="50dp" >
+        android:layout_height="match_parent" >
 
-        <include layout="@layout/layout_main_body" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:layout_marginLeft="50dp" >
 
-        <include layout="@layout/layout_weather_and_status" />
+            <include layout="@layout/layout_main_body" />
+
+            <include layout="@layout/layout_weather_and_status" />
+        </RelativeLayout>
+
+        <include layout="@layout/layout_bottom_button" />
+
+        <include layout="@layout/focus_shadow" />
     </RelativeLayout>
 
-    <include layout="@layout/layout_bottom_button" />
-    
-    <include layout="@layout/focus_shadow"/>
+    <RelativeLayout
+        android:id="@+id/rl_lock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" >
+
+        <TextView
+            android:id="@+id/tv_lock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:textSize="40sp" />
+    </RelativeLayout>
 
 </RelativeLayout>

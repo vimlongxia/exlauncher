@@ -30,4 +30,5 @@
     <string name="otaupdatecenter_not_found">OTAUpdateCenter Not Found!</string>
     <string name="app_not_found">Application Not Found!</string>
     <string name="click_list_item_to_read">Click the list item to read</string>
+    <string name="box_lock">Your Box has been Locked due to </string>
 </resources>
