@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -197,9 +199,9 @@ public class ExLauncher extends Activity {
                 break;
 
             case MSG_DATA_GET_JSON_LOOP:
-                getJsonData();
                 this.sendEmptyMessageDelayed(MSG_DATA_GET_JSON_LOOP,
                         GET_JSON_DELAY);
+                getJsonData();
                 break;
             }
         }
@@ -229,6 +231,7 @@ public class ExLauncher extends Activity {
                 break;
 
             case MSG_PIC_CHECK_DATA:
+                checkLogoPic();
                 checkLatestHitsPic();
                 break;
             }
@@ -245,6 +248,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_UI_DISPLAY_LOCK = 6;
 
     private static final int MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL = 5 * 1000;
+    private static final int MSG_UI_DEALER_LOGO_UPDATE_INTERNAL = 5 * 1000;
 
     private Handler mUiHandler = new Handler() {
 
@@ -263,6 +267,8 @@ public class ExLauncher extends Activity {
 
             case MSG_UI_DISPLAY_LOGO:
                 displayLogo();
+                this.sendEmptyMessageDelayed(MSG_UI_DISPLAY_LOGO,
+                        MSG_UI_DEALER_LOGO_UPDATE_INTERNAL);
                 break;
 
             case MSG_UI_CHECK_OTA_UPDATE_INFO:
@@ -291,6 +297,18 @@ public class ExLauncher extends Activity {
         }
 
         displayBottomMsgInfo();
+    }
+
+    private void recyleOldBitmap(Map<String, Bitmap> mapOldBitmap) {
+        // recyle the old resource
+        if ((mapOldBitmap != null) && (mapOldBitmap.size() > 0)) {
+            Set<String> key = mapOldBitmap.keySet();
+            for (Iterator it = key.iterator(); it.hasNext();) {
+                String s = (String) it.next();
+                mapOldBitmap.get(s).recycle();
+            }
+        }
+
     }
 
     private void getLatestPic(final PicType picType) {
@@ -328,16 +346,23 @@ public class ExLauncher extends Activity {
 
             InputStream isBitmap = null;
             Map<String, Bitmap> mapBitmap = null;
+            Map<String, Bitmap> mapOldBitmap = null;
             if (picType == PicType.PIC_AD) {
+                mapOldBitmap = mAdvBitmapMap;
                 mAdvBitmapMap = new HashMap<String, Bitmap>();
                 mapBitmap = mAdvBitmapMap;
             } else if (picType == PicType.PIC_VIDEO_AD) {
+                mapOldBitmap = mPVAdvBitmapMap;
                 mPVAdvBitmapMap = new HashMap<String, Bitmap>();
                 mapBitmap = mPVAdvBitmapMap;
             } else if (picType == PicType.PIC_STATIC) {
+                mapOldBitmap = mStaticAdvBitmapMap;
                 mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
                 mapBitmap = mStaticAdvBitmapMap;
             }
+
+            // recyle the old resource
+            recyleOldBitmap(mapOldBitmap);
 
             for (int i = 0; i < picMap.size(); i++) {
                 String key = picPrefix + (i + 1);
@@ -364,8 +389,61 @@ public class ExLauncher extends Activity {
 
     private void getLatestHitsPic() {
         getLatestPic(PicType.PIC_VIDEO_AD);
+        // loadAdvPic();
+
         getLatestPic(PicType.PIC_AD);
+        // loadPVAdvPic();
+
         getLatestPic(PicType.PIC_STATIC);
+        // loadStaticAdvPic();
+    }
+
+    private void checkLogoPic() {
+        if (mLogoBitmap != null) {
+            logi("[checkLogoPic] mLogoBitmap have been downloaded.");
+            return;
+        }
+
+        if (!hasNetworkConnected()) {
+            loge("[checkLogoPic] there is no any connection!");
+            return;
+        }
+
+        synchronized (ExLauncher.this) {
+            new Thread("checkLogoPic") {
+                @Override
+                public void run() {
+                    // TODO Auto-generated method stub
+                    String logoUrlString = mSharedPreferences.getString(
+                            JsonAdData.DEALER_LOGO, null);
+
+                    if (TextUtils.isEmpty(logoUrlString)) {
+                        logw("[checkLogoPic] logo url is empty!");
+                        return;
+                    }
+
+                    InputStream isBitmap = HttpRequest
+                            .getStreamFromUrl(logoUrlString);
+                    if (isBitmap == null) {
+                        logw("[checkLogoPic] error when getting logo on "
+                                + logoUrlString);
+                        return;
+                    }
+
+                    Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
+
+                    if (bitmap != null) {
+                        if (mLogoBitmap != null) {
+                            mLogoBitmap.recycle();
+                        }
+
+                        mLogoBitmap = bitmap;
+                        LauncherUtils.saveBitmap(ExLauncher.this, mLogoBitmap,
+                                LOGO_NAME);
+                    }
+                }
+            }.start();
+        }
     }
 
     private void checkLatestHitsPic() {
@@ -389,13 +467,16 @@ public class ExLauncher extends Activity {
             return;
         }
 
-        mLogoBitmap = BitmapFactory.decodeStream(isBitmap);
+        Bitmap bitmap = BitmapFactory.decodeStream(isBitmap);
 
-        if (mLogoBitmap != null) {
+        if (bitmap != null) {
+            if (mLogoBitmap != null) {
+                mLogoBitmap.recycle();
+            }
+
+            mLogoBitmap = bitmap;
             LauncherUtils.saveBitmap(this, mLogoBitmap, LOGO_NAME);
         }
-
-        mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LOGO);
     }
 
     private void getAdData() {
@@ -804,6 +885,12 @@ public class ExLauncher extends Activity {
             return;
         }
 
+        if (!hasNetworkConnected()) {
+            loge("[checkPicAllDownloadedByType] picType : " + picType
+                    + ", there is not any connection!");
+            return;
+        }
+
         synchronized (ExLauncher.this) {
             final ArrayList<String> needToDownloadKey = new ArrayList<String>();
             final Map<String, String> needToDownloadUrl = new HashMap<String, String>();
@@ -825,12 +912,6 @@ public class ExLauncher extends Activity {
                 } else {
                     bitmap.recycle();
                 }
-            }
-
-            if (!hasNetworkConnected()) {
-                loge("[checkPicAllDownloadedByType] picType : " + picType
-                        + ", there is not any connection!");
-                return;
             }
 
             if (needToDownloadKey.size() > 0) {
@@ -884,21 +965,24 @@ public class ExLauncher extends Activity {
         }
     }
 
+    private void loadAdvPic() {
+        recyleOldBitmap(mAdvBitmapMap);
+        mAdvBitmapMap = new HashMap<String, Bitmap>();
+        for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
+            String advKey = AD_PIC_PREFIX + (i + 1);
+            Bitmap bitmap = LauncherUtils.loadBitmap(this, advKey + ".png");
+            if (bitmap != null) {
+                mAdvBitmapMap.put(advKey, bitmap);
+            }
+        }
+    }
+
     private void displayAdvPic() {
         synchronized (mAdvBitmapMap) {
             if ((mAdvBitmapMap == null)
                     || (mAdvBitmapMap.size() < MAX_AD_PIC_ROTATE_NUM)) {
                 logd("[displayAdvPic] mAdvBitmapMap is not full, try to load from the file");
-
-                mAdvBitmapMap = new HashMap<String, Bitmap>();
-                for (int i = 0; i < MAX_AD_PIC_ROTATE_NUM; i++) {
-                    String advKey = AD_PIC_PREFIX + (i + 1);
-                    Bitmap bitmap = LauncherUtils.loadBitmap(this, advKey
-                            + ".png");
-                    if (bitmap != null) {
-                        mAdvBitmapMap.put(advKey, bitmap);
-                    }
-                }
+                loadAdvPic();
             }
 
             logd("[displayAdvPic] mAdvBitmapMap size : " + mAdvBitmapMap.size()
@@ -946,21 +1030,24 @@ public class ExLauncher extends Activity {
         }
     }
 
+    private void loadPVAdvPic() {
+        recyleOldBitmap(mPVAdvBitmapMap);
+        mPVAdvBitmapMap = new HashMap<String, Bitmap>();
+        for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
+            String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
+            Bitmap bitmap = LauncherUtils.loadBitmap(this, pvadvKey + ".png");
+            if (bitmap != null) {
+                mPVAdvBitmapMap.put(pvadvKey, bitmap);
+            }
+        }
+    }
+
     private void displayPVAdvPic() {
         synchronized (mPVAdvBitmapMap) {
             if ((mPVAdvBitmapMap == null)
                     || (mPVAdvBitmapMap.size() < MAX_VIDEO_PIC_ROTATE_NUM)) {
                 logd("[displayPVAdvPic] mPVAdvBitmapMap is not full, try to load from the file");
-
-                mPVAdvBitmapMap = new HashMap<String, Bitmap>();
-                for (int i = 0; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
-                    String pvadvKey = PVAD_PIC_PREFIX + (i + 1);
-                    Bitmap bitmap = LauncherUtils.loadBitmap(this, pvadvKey
-                            + ".png");
-                    if (bitmap != null) {
-                        mPVAdvBitmapMap.put(pvadvKey, bitmap);
-                    }
-                }
+                loadPVAdvPic();
             }
 
             logd("[displayPVAdvPic] mPVAdvBitmapMap size : "
@@ -1008,21 +1095,25 @@ public class ExLauncher extends Activity {
         }
     }
 
+    private void loadStaticAdvPic() {
+        recyleOldBitmap(mStaticAdvBitmapMap);
+        mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
+        for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
+            String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
+            Bitmap bitmap = LauncherUtils.loadBitmap(this, staticAdvKey
+                    + ".png");
+            if (bitmap != null) {
+                mStaticAdvBitmapMap.put(staticAdvKey, bitmap);
+            }
+        }
+    }
+
     private void displayStaticAdvPic() {
         synchronized (mStaticAdvBitmapMap) {
             if ((mStaticAdvBitmapMap == null)
                     || (mStaticAdvBitmapMap.size() < MAX_STATIC_AD_PIC_NUM)) {
                 logd("[displayStaticAdvPic] mStaticAdvBitmapMap is not full, try to load from the file");
-
-                mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
-                for (int i = 0; i < MAX_STATIC_AD_PIC_NUM; i++) {
-                    String staticAdvKey = STATIC_AD_PIC_PREFIX + (i + 1);
-                    Bitmap bitmap = LauncherUtils.loadBitmap(this, staticAdvKey
-                            + ".png");
-                    if (bitmap != null) {
-                        mStaticAdvBitmapMap.put(staticAdvKey, bitmap);
-                    }
-                }
+                loadStaticAdvPic();
             }
 
             logd("[displayStaticAdvPic] mStaticAdvBitmapMap size : "
@@ -1170,10 +1261,10 @@ public class ExLauncher extends Activity {
         displayBottomButtom();
         displayStatus();
         displayRightSide();
-        displayLogo();
 
         if (!mStartUpdateLatestHits) {
             mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LATEST_HITS);
+            mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LOGO);
             mStartUpdateLatestHits = true;
         }
     }
