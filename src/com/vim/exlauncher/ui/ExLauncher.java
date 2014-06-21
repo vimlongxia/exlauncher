@@ -120,7 +120,6 @@ public class ExLauncher extends Activity {
     private ImageButtonOnClickListener mImageButtonListener;
     private OnFocusChangeListener mImageButtonOnFocusChangeListener;
     private OnFocusChangeListener mBottomButtonOnFocusChangeListener;
-    private View.OnKeyListener mImageButtonOnKeyListener;
     private BottomImageButton mImageButtonFocus;
     private String mCurrentFirmwareVer;
     private Toast mToast;
@@ -422,6 +421,8 @@ public class ExLauncher extends Activity {
                         return;
                     }
 
+                    logoUrlString = logoUrlString.replace("\\/", "/");
+
                     InputStream isBitmap = HttpRequest
                             .getStreamFromUrl(logoUrlString);
                     if (isBitmap == null) {
@@ -460,6 +461,8 @@ public class ExLauncher extends Activity {
             logw("[getDealerLogo] logo url is empty!");
             return;
         }
+
+        logoUrlString = logoUrlString.replace("\\/", "/");
 
         InputStream isBitmap = HttpRequest.getStreamFromUrl(logoUrlString);
         if (isBitmap == null) {
@@ -678,7 +681,7 @@ public class ExLauncher extends Activity {
                 JsonAdData.LOCK_STATUS, "false");
         boolean lock = false;
 
-        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equals("true")) {
+        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equalsIgnoreCase("true")) {
             lock = true;
         }
 
@@ -797,7 +800,7 @@ public class ExLauncher extends Activity {
                 JsonAdData.LOCK_REASON, "");
         boolean lock = false;
 
-        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equals("true")) {
+        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equalsIgnoreCase("true")) {
             lock = true;
         }
 
@@ -813,7 +816,7 @@ public class ExLauncher extends Activity {
         String menuStatusStr = mSharedPreferences.getString(
                 JsonAdData.MENU_STATUS, "true");
         boolean show = true;
-        if (!TextUtils.isEmpty(menuStatusStr) && menuStatusStr.equals("false")) {
+        if (!TextUtils.isEmpty(menuStatusStr) && menuStatusStr.equalsIgnoreCase("false")) {
             show = false;
         }
 
@@ -1362,7 +1365,6 @@ public class ExLauncher extends Activity {
         mRlLock = (RelativeLayout) findViewById(R.id.rl_lock);
         mTvLock = (TextView) findViewById(R.id.tv_lock);
 
-        mImageButtonOnKeyListener = new ImageButtonOnKeyListener(this);
         mImageButtonListener = new ImageButtonOnClickListener(this);
         mImageButtonOnFocusChangeListener = new OnFocusChangeListener() {
 
