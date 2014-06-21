@@ -687,22 +687,16 @@ public class ExLauncher extends Activity {
             return;
         }
 
-        if (TextUtils.isEmpty(mCurrentFirmwareVer)) {
-            if (mUpdateDialog == null) {
+        try {
+            int intCurrentVer = Integer.parseInt(mCurrentFirmwareVer);
+            int intVerFromJson = Integer.parseInt(firmwareVer);
+
+            if ((intVerFromJson > intCurrentVer) && (mUpdateDialog == null)) {
                 showNewVersionUpdate();
             }
-        } else {
-            try {
-                int intCurrentVer = Integer.parseInt(mCurrentFirmwareVer);
-                int intVerFromJson = Integer.parseInt(firmwareVer);
-
-                if ((intVerFromJson > intCurrentVer) && (mUpdateDialog == null)) {
-                    showNewVersionUpdate();
-                }
-            } catch (NumberFormatException nfe) {
-                loge("[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer
-                        + " and " + firmwareVer + " error!");
-            }
+        } catch (NumberFormatException nfe) {
+            loge("[checkOtaUpdateInfo] parse " + mCurrentFirmwareVer + " and "
+                    + firmwareVer + " error!");
         }
     }
 
