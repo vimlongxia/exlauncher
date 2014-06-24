@@ -1277,6 +1277,8 @@ public class ExLauncher extends Activity {
         editor.remove(JsonAdData.S_URL_AD3).commit();
         editor.remove(JsonAdData.S_URL_AD4).commit();
         editor.remove(JsonAdData.S_URL_AD5).commit();
+
+        editor.remove(JsonAdData.BOTTOM_MSG).commit();
         
         int i = 0;
         for (; i<MAX_AD_PIC_ROTATE_NUM; i++) {
