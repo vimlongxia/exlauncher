@@ -16,7 +16,7 @@ public class BottomMsgContentProvider extends ContentProvider {
     private static final String TAG = "BottomMsgContentProvider";
 
     private static final String AUTHORITY = "bottommsg";
-    private static final String DATABASE_NAME = "bottommsg.db";
+    public static final String DATABASE_NAME = "bottommsg.db";
     private static final String TABLE_MSG = "msg";
     public static final String _ID = "_id";
     public static final String MSG_ID = "msg_id";

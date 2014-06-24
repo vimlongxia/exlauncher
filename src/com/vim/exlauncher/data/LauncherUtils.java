@@ -1,6 +1,7 @@
 package com.vim.exlauncher.data;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -147,6 +148,21 @@ public class LauncherUtils {
             os.close();
         } catch (Exception e) {
             Log.e(TAG, "[saveBitmap] exception!");
+            // e.printStackTrace();
+        }
+    }
+    
+    public static void deleteFile(String fileName) {
+        if (TextUtils.isEmpty(fileName)) {
+            Log.e(TAG, "[saveBitmap] file name is empty!");
+            return;
+        }
+        
+        try {
+            File file = new File(fileName);
+            file.delete();
+        } catch (Exception e) {
+            Log.e(TAG, "[deleteFile] exception! e : " + e);
             // e.printStackTrace();
         }
     }

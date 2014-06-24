@@ -28,6 +28,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -62,6 +63,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.vim.exlauncher.R;
+import com.vim.exlauncher.data.BottomMsgContentProvider;
 import com.vim.exlauncher.data.HttpRequest;
 import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
@@ -1237,6 +1239,63 @@ public class ExLauncher extends Activity {
         return dateFormattedString;
     }
 
+    private void removeAllOldData(){
+        Editor editor = mSharedPreferences.edit();
+        editor.remove(JsonAdData.CITY).commit();
+        editor.remove(JsonAdData.COUNTRY).commit();
+        editor.remove(JsonAdData.DEALER_LOGO).commit();
+        editor.remove(JsonAdData.FIRMWARE_VERSION).commit();
+        
+        editor.remove(JsonAdData.ADV1).commit();
+        editor.remove(JsonAdData.ADV2).commit();
+        editor.remove(JsonAdData.ADV3).commit();
+        editor.remove(JsonAdData.ADV4).commit();
+        
+        editor.remove(JsonAdData.URL_AD1).commit();
+        editor.remove(JsonAdData.URL_AD2).commit();
+        editor.remove(JsonAdData.URL_AD3).commit();
+        editor.remove(JsonAdData.URL_AD4).commit();
+        
+        editor.remove(JsonAdData.PVADV1).commit();
+        editor.remove(JsonAdData.PVADV2).commit();
+        editor.remove(JsonAdData.PVADV3).commit();
+        editor.remove(JsonAdData.PVADV4).commit();
+        
+        editor.remove(JsonAdData.VADV1).commit();
+        editor.remove(JsonAdData.VADV2).commit();
+        editor.remove(JsonAdData.VADV3).commit();
+        editor.remove(JsonAdData.VADV4).commit();
+
+        editor.remove(JsonAdData.S_ADV1).commit();
+        editor.remove(JsonAdData.S_ADV2).commit();
+        editor.remove(JsonAdData.S_ADV3).commit();
+        editor.remove(JsonAdData.S_ADV4).commit();
+        editor.remove(JsonAdData.S_ADV5).commit();
+
+        editor.remove(JsonAdData.S_URL_AD1).commit();
+        editor.remove(JsonAdData.S_URL_AD2).commit();
+        editor.remove(JsonAdData.S_URL_AD3).commit();
+        editor.remove(JsonAdData.S_URL_AD4).commit();
+        editor.remove(JsonAdData.S_URL_AD5).commit();
+        
+        int i = 0;
+        for (; i<MAX_AD_PIC_ROTATE_NUM; i++) {
+            LauncherUtils.deleteFile(AD_PIC_PREFIX + (i+1) + ".png");
+        }
+        
+        i = 0;
+        for (; i<MAX_VIDEO_PIC_ROTATE_NUM; i++) {
+            LauncherUtils.deleteFile(PVAD_PIC_PREFIX + (i+1) + ".png");
+        }
+        
+        i = 0;
+        for (; i<MAX_STATIC_AD_PIC_NUM; i++) {
+            LauncherUtils.deleteFile(STATIC_AD_PIC_PREFIX + (i+1) + ".png");
+        }
+        
+        this.deleteDatabase(BottomMsgContentProvider.DATABASE_NAME);
+    }
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -1272,6 +1331,8 @@ public class ExLauncher extends Activity {
         // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
         mIbTv.requestFocus();
+        
+        removeAllOldData();
 
         registerStatusReceiver();
     }
@@ -1283,7 +1344,6 @@ public class ExLauncher extends Activity {
 
         mDataHandler.sendEmptyMessageDelayed(MSG_DATA_GET_JSON_LOOP,
                 GET_JSON_DELAY);
-        showScreenLength();
     }
 
     @Override
@@ -1654,57 +1714,6 @@ public class ExLauncher extends Activity {
         }
 
         return false;
-    }
-
-    private void showScreenLength() {
-        // »ñÈ¡ÆÁÄ»¿í¸ß£¨·½·¨1£©
-        int screenWidth = getWindowManager().getDefaultDisplay().getWidth(); // ÆÁÄ»¿í£¨ÏñËØ£¬Èç£º480px£©
-        int screenHeight = getWindowManager().getDefaultDisplay().getHeight(); // ÆÁÄ»¸ß£¨ÏñËØ£¬Èç£º800p£©
-        logi("first_method screenWidth=" + screenWidth + "; screenHeight="
-                + screenHeight);
-
-        // »ñÈ¡ÆÁÄ»ÃÜ¶È£¨·½·¨2£©
-        DisplayMetrics dm = new DisplayMetrics();
-        dm = getResources().getDisplayMetrics();
-        float density = dm.density; // ÆÁÄ»ÃÜ¶È£¨ÏñËØ±ÈÀý£º0.75/1.0/1.5/2.0£©
-        int densityDPI = dm.densityDpi; // ÆÁÄ»ÃÜ¶È£¨Ã¿´çÏñËØ£º120/160/240/320£©
-        float xdpi = dm.xdpi;
-        float ydpi = dm.ydpi;
-        logi("second_method xdpi=" + xdpi + "; ydpi=" + ydpi);
-        logi("second_method density=" + density + "; densityDPI=" + densityDPI);
-        screenWidth = dm.widthPixels; // ÆÁÄ»¿í£¨ÏñËØ£¬Èç£º480px£©
-        screenHeight = dm.heightPixels; // ÆÁÄ»¸ß£¨ÏñËØ£¬Èç£º800px£©
-        logi("second_method screenWidth=" + screenWidth + "; screenHeight="
-                + screenHeight);
-
-        // »ñÈ¡ÆÁÄ»ÃÜ¶È£¨·½·¨3£©
-        dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
-        density = dm.density; // ÆÁÄ»ÃÜ¶È£¨ÏñËØ±ÈÀý£º0.75/1.0/1.5/2.0£©
-        densityDPI = dm.densityDpi; // ÆÁÄ»ÃÜ¶È£¨Ã¿´çÏñËØ£º120/160/240/320£©
-        xdpi = dm.xdpi;
-        ydpi = dm.ydpi;
-        logi("third_method xdpi=" + xdpi + "; ydpi=" + ydpi);
-        logi("third_method density=" + density + "; densityDPI=" + densityDPI);
-        int screenWidthDip = dm.widthPixels; // ÆÁÄ»¿í£¨dip£¬Èç£º320dip£©
-        int screenHeightDip = dm.heightPixels; // ÆÁÄ»¿í£¨dip£¬Èç£º533dip£©
-        logi("third_method screenWidthDip=" + screenWidthDip
-                + "; screenHeightDip=" + screenHeightDip);
-        screenWidth = (int) (dm.widthPixels * density + 0.5f); // ÆÁÄ»¿í£¨px£¬Èç£º480px£©
-        screenHeight = (int) (dm.heightPixels * density + 0.5f); // ÆÁÄ»¸ß£¨px£¬Èç£º800px£©
-        logi("third_method screenWidth=" + screenWidth + "; screenHeight="
-                + screenHeight);
-    }
-
-    private void showViewLength(View v) {
-        int w = View.MeasureSpec.makeMeasureSpec(0,
-                View.MeasureSpec.UNSPECIFIED);
-        int h = View.MeasureSpec.makeMeasureSpec(0,
-                View.MeasureSpec.UNSPECIFIED);
-        v.measure(w, h);
-        int height = v.getMeasuredHeight();
-        int width = v.getMeasuredWidth();
-        logi("width : " + width + ", height : " + height);
     }
 
     private static void logi(String strs) {
