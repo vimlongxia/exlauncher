@@ -152,15 +152,17 @@ public class LauncherUtils {
         }
     }
     
-    public static void deleteFile(String fileName) {
+    public static void deleteFile(String filePath, String fileName) {
         if (TextUtils.isEmpty(fileName)) {
             Log.e(TAG, "[saveBitmap] file name is empty!");
             return;
         }
         
         try {
-            File file = new File(fileName);
-            file.delete();
+            File file = new File(filePath, fileName);
+            if (file.exists()) {     
+                file.delete();     
+            } 
         } catch (Exception e) {
             Log.e(TAG, "[deleteFile] exception! e : " + e);
             // e.printStackTrace();

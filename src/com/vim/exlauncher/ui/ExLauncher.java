@@ -144,6 +144,7 @@ public class ExLauncher extends Activity {
 
     private static final String FIRMWARE_VERSION_PROP = "otaupdater.otaver";
 
+    private final static String DATA_URL = "/data/data/";
     private static final String EXTERNAL_STORAGE = "/storage/external_storage";
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
 
@@ -1239,28 +1240,29 @@ public class ExLauncher extends Activity {
         return dateFormattedString;
     }
 
-    private void removeAllOldData(){
+    private void removeAllOldData() {
+        logd("[removeAllOldData]");
         Editor editor = mSharedPreferences.edit();
         editor.remove(JsonAdData.CITY).commit();
         editor.remove(JsonAdData.COUNTRY).commit();
         editor.remove(JsonAdData.DEALER_LOGO).commit();
         editor.remove(JsonAdData.FIRMWARE_VERSION).commit();
-        
+
         editor.remove(JsonAdData.ADV1).commit();
         editor.remove(JsonAdData.ADV2).commit();
         editor.remove(JsonAdData.ADV3).commit();
         editor.remove(JsonAdData.ADV4).commit();
-        
+
         editor.remove(JsonAdData.URL_AD1).commit();
         editor.remove(JsonAdData.URL_AD2).commit();
         editor.remove(JsonAdData.URL_AD3).commit();
         editor.remove(JsonAdData.URL_AD4).commit();
-        
+
         editor.remove(JsonAdData.PVADV1).commit();
         editor.remove(JsonAdData.PVADV2).commit();
         editor.remove(JsonAdData.PVADV3).commit();
         editor.remove(JsonAdData.PVADV4).commit();
-        
+
         editor.remove(JsonAdData.VADV1).commit();
         editor.remove(JsonAdData.VADV2).commit();
         editor.remove(JsonAdData.VADV3).commit();
@@ -1279,25 +1281,38 @@ public class ExLauncher extends Activity {
         editor.remove(JsonAdData.S_URL_AD5).commit();
 
         editor.remove(JsonAdData.BOTTOM_MSG).commit();
-        
+
+        editor.remove(JsonWeatherData.WEATHER_MAIN).commit();
+        editor.remove(JsonWeatherData.ICON).commit();
+        editor.remove(JsonWeatherData.TEMP).commit();
+        editor.remove(JsonWeatherData.TEMP_MAX).commit();
+        editor.remove(JsonWeatherData.TEMP_MIN).commit();
+        editor.remove(JsonWeatherData.SPEED).commit();
+        editor.remove(JsonWeatherData.DEG).commit();
+
+        final String PIC_FILE_PATH_PREFIX = DATA_URL
+                + getPackageName().toString() + "/files";
         int i = 0;
-        for (; i<MAX_AD_PIC_ROTATE_NUM; i++) {
-            LauncherUtils.deleteFile(AD_PIC_PREFIX + (i+1) + ".png");
+        for (; i < MAX_AD_PIC_ROTATE_NUM; i++) {
+            LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, AD_PIC_PREFIX
+                    + (i + 1) + ".png");
         }
-        
+
         i = 0;
-        for (; i<MAX_VIDEO_PIC_ROTATE_NUM; i++) {
-            LauncherUtils.deleteFile(PVAD_PIC_PREFIX + (i+1) + ".png");
+        for (; i < MAX_VIDEO_PIC_ROTATE_NUM; i++) {
+            LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, PVAD_PIC_PREFIX
+                    + (i + 1) + ".png");
         }
-        
+
         i = 0;
-        for (; i<MAX_STATIC_AD_PIC_NUM; i++) {
-            LauncherUtils.deleteFile(STATIC_AD_PIC_PREFIX + (i+1) + ".png");
+        for (; i < MAX_STATIC_AD_PIC_NUM; i++) {
+            LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, STATIC_AD_PIC_PREFIX
+                    + (i + 1) + ".png");
         }
-        
+
         this.deleteDatabase(BottomMsgContentProvider.DATABASE_NAME);
     }
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -1333,7 +1348,7 @@ public class ExLauncher extends Activity {
         // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
         mIbTv.requestFocus();
-        
+
         removeAllOldData();
 
         registerStatusReceiver();
