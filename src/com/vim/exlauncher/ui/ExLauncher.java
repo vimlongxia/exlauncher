@@ -33,6 +33,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.State;
@@ -859,9 +860,10 @@ public class ExLauncher extends Activity {
         for (int i = 0; i < mBottomButtonIdList.size(); i++) {
             button = (BottomImageButton) findViewById(mBottomButtonIdList
                     .get(i));
-            button.setFocusable(show);
-            button.setClickable(show);
-            button.setFocusableInTouchMode(show);
+            // button.setFocusable(show);
+            // button.setClickable(show);
+            // button.setFocusableInTouchMode(show);
+            button.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
         }
     }
 
@@ -1205,7 +1207,7 @@ public class ExLauncher extends Activity {
             return;
         }
 
-        mIvLogo.setImageBitmap(mLogoBitmap);
+        mIvLogo.setBackgroundDrawable(new BitmapDrawable(mLogoBitmap));
         mIvLogo.setVisibility(View.VISIBLE);
     }
 
