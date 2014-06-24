@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.util.Log;
 
 public class JsonAdData {
@@ -135,6 +136,20 @@ public class JsonAdData {
         mJsonObj = jsonObj;
     }
 
+    public boolean isLock() {
+        boolean lock = false;
+        if (!TextUtils.isEmpty(mLockStatus)
+                && mLockStatus.equalsIgnoreCase("true")) {
+            lock = true;
+        }
+
+        return lock;
+    }
+
+    public String getLockReason() {
+        return mLockReason;
+    }
+
     private void saveAdDataToSharedPref() {
         SharedPreferences sp = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
@@ -145,8 +160,8 @@ public class JsonAdData {
         editor.putString(DEALER_LOGO, mDealerLogo);
         editor.putString(FIRMWARE_VERSION, mFirmwareVersion);
         editor.putString(MENU_STATUS, mMenuStatus);
-        editor.putString(LOCK_STATUS, mLockStatus);
-        editor.putString(LOCK_REASON, mLockReason);
+        // editor.putString(LOCK_STATUS, mLockStatus);
+        // editor.putString(LOCK_REASON, mLockReason);
 
         // ad
         editor.putString(ADV1, mAdv1);
@@ -199,12 +214,12 @@ public class JsonAdData {
     private void saveMsg() {
         // check if this is a new msg
         boolean isMsgNew = MsgContentUtils.isNewMsg(mContext, mMsgNo);
-        
+
         if (!isMsgNew) {
             Log.d(TAG, "[saveMsg] this is not a new msg, bailed.");
             return;
         }
-        
+
         if (!MsgContentUtils.reachMaxNum(mContext)) {
             // the message is not full
             MsgContentUtils.inserIntoMsgTable(mContext, mMsgNo, mBottomMsg);
@@ -212,8 +227,8 @@ public class JsonAdData {
             // the message list is full,
             int msgEarlest = MsgContentUtils.getEarlestMsgId(mContext);
 
-            Log.d(TAG, "[saveMsg] no to Del : " + msgEarlest + ", new msg no : "
-                    + mMsgNo);
+            Log.d(TAG, "[saveMsg] no to Del : " + msgEarlest
+                    + ", new msg no : " + mMsgNo);
 
             if (msgEarlest > 0) {
                 MsgContentUtils.deleteMsgById(mContext, mMsgNo);

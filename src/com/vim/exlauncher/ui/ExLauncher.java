@@ -832,19 +832,14 @@ public class ExLauncher extends Activity {
     }
 
     private void displayLockStatus() {
-        String lockStatusStr = mSharedPreferences.getString(
-                JsonAdData.LOCK_STATUS, "false");
-        String lockReasonStr = mSharedPreferences.getString(
-                JsonAdData.LOCK_REASON, "");
         boolean lock = false;
 
-        if (!TextUtils.isEmpty(lockStatusStr)
-                && lockStatusStr.equalsIgnoreCase("true")) {
+        if ((mJsonAdData != null) && mJsonAdData.isLock()) {
             lock = true;
         }
 
         if (lock) {
-            mTvLock.setText(/* getString(R.string.box_lock) + " " + */lockReasonStr);
+            mTvLock.setText(mJsonAdData.getLockReason());
         }
 
         mRlLock.setVisibility(lock ? View.VISIBLE : View.GONE);
