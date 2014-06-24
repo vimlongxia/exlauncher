@@ -136,14 +136,24 @@ public class JsonAdData {
         mJsonObj = jsonObj;
     }
 
-    public boolean isLock() {
-        boolean lock = false;
+    public boolean getLockStatus() {
+        boolean lockStatus = false;
         if (!TextUtils.isEmpty(mLockStatus)
                 && mLockStatus.equalsIgnoreCase("true")) {
-            lock = true;
+            lockStatus = true;
         }
 
-        return lock;
+        return lockStatus;
+    }
+
+    public boolean getMenuStatus() {
+        boolean menuStatus = true;
+        if (!TextUtils.isEmpty(mMenuStatus)
+                && mMenuStatus.equalsIgnoreCase("false")) {
+            menuStatus = false;
+        }
+
+        return menuStatus;
     }
 
     public String getLockReason() {
@@ -159,7 +169,7 @@ public class JsonAdData {
         editor.putString(COUNTRY, mCountry);
         editor.putString(DEALER_LOGO, mDealerLogo);
         editor.putString(FIRMWARE_VERSION, mFirmwareVersion);
-        editor.putString(MENU_STATUS, mMenuStatus);
+        // editor.putString(MENU_STATUS, mMenuStatus);
         // editor.putString(LOCK_STATUS, mLockStatus);
         // editor.putString(LOCK_REASON, mLockReason);
 

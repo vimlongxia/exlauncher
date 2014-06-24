@@ -835,7 +835,7 @@ public class ExLauncher extends Activity {
     private void displayLockStatus() {
         boolean lock = false;
 
-        if ((mJsonAdData != null) && mJsonAdData.isLock()) {
+        if ((mJsonAdData != null) && mJsonAdData.getLockStatus()) {
             lock = true;
         }
 
@@ -848,11 +848,8 @@ public class ExLauncher extends Activity {
     }
 
     private void displayBottomButtom() {
-        String menuStatusStr = mSharedPreferences.getString(
-                JsonAdData.MENU_STATUS, "true");
         boolean show = true;
-        if (!TextUtils.isEmpty(menuStatusStr)
-                && menuStatusStr.equalsIgnoreCase("false")) {
+        if ((mJsonAdData != null) && !mJsonAdData.getMenuStatus()) {
             show = false;
         }
 
