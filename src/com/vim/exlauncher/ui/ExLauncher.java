@@ -128,6 +128,11 @@ public class ExLauncher extends Activity {
     private Animation mFocusAnimation;
     private Animation mUnfocusAnimation;
 
+    private static final String SAVED_ETH_MAC = "ubootenv.var.ethmac";
+    private static final String SAVED_WIFI_MAC = "ubootenv.var.wifimac";
+    private String mSavedMacWifi;
+    private String mSavedMacEth;
+
     private static final String TIME_FORMAT = "HH:mm";
     public static final String ETH_ADDRESS_PATH = "/sys/class/net/eth0/address";
     private static final String MAC_PARAM_ETH = "mac=";
@@ -139,6 +144,7 @@ public class ExLauncher extends Activity {
     private static final String EXTERNAL_STORAGE = "/storage/external_storage";
     private static final String SD_PATH = "/storage/external_storage/sdcard1";
 
+    // http://mymobiletvhd.com/android/fitv.php?mac=00116d063cfc&mac2=a0f4594776de
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/fitv.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
@@ -486,21 +492,52 @@ public class ExLauncher extends Activity {
         String macEth = LauncherUtils.getEthMac(ETH_ADDRESS_PATH);
         String macWifi = LauncherUtils.getWifiMac(this);
 
-        logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+        logd("[getAdData] savedMacEth : " + mSavedMacEth + ", mSavedMacWifi : "
+                + mSavedMacWifi + ", macEth : " + macEth + ", macWifi : "
+                + macWifi);
         if (TextUtils.isEmpty(macEth)) {
-            Log.e(TAG, "[getAdData] macEth is empty!");
-            return;
+            Log.e(TAG, "[getAdData] macEth is empty, try to use mSavedMacEth!");
+
+            if (TextUtils.isEmpty(mSavedMacEth)) {
+                Log.e(TAG, "[getAdData] mSavedMacEth is empty!");
+                return;
+            } else {
+                macEth = mSavedMacEth;
+            }
         } else {
             macEth = macEth.replace(":", "");
         }
 
         if (TextUtils.isEmpty(macWifi)) {
-            Log.e(TAG, "[getAdData] macWifi is empty!");
-            return;
+            Log.e(TAG,
+                    "[getAdData] macWifi is empty, try to use mSavedMacWifi!");
+
+            if (TextUtils.isEmpty(mSavedMacWifi)) {
+                Log.e(TAG, "[getAdData] mSavedMacWifi is empty!");
+                return;
+            } else {
+                macWifi = mSavedMacWifi;
+            }
         } else {
             macWifi = macWifi.replace(":", "");
         }
         logd("[getAdData] macEth : " + macEth + ", macWifi : " + macWifi);
+
+        if (TextUtils.isEmpty(mSavedMacEth)) {
+            mSavedMacEth = macEth;
+            logd("[getAdData] save mSavedMacEth : " + mSavedMacEth
+                    + " to mSharedPreferences");
+            mSharedPreferences.edit().putString(SAVED_ETH_MAC, mSavedMacEth)
+                    .commit();
+        }
+
+        if (TextUtils.isEmpty(mSavedMacWifi)) {
+            mSavedMacWifi = macWifi;
+            logd("[getAdData] save mSavedMacWifi : " + mSavedMacWifi
+                    + " to mSharedPreferences");
+            mSharedPreferences.edit().putString(SAVED_WIFI_MAC, mSavedMacWifi)
+                    .commit();
+        }
 
         // String macEth = "00116d063cfc";
         // String macWifi = "a0f4594776de";
@@ -681,7 +718,8 @@ public class ExLauncher extends Activity {
                 JsonAdData.LOCK_STATUS, "false");
         boolean lock = false;
 
-        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equalsIgnoreCase("true")) {
+        if (!TextUtils.isEmpty(lockStatusStr)
+                && lockStatusStr.equalsIgnoreCase("true")) {
             lock = true;
         }
 
@@ -800,12 +838,13 @@ public class ExLauncher extends Activity {
                 JsonAdData.LOCK_REASON, "");
         boolean lock = false;
 
-        if (!TextUtils.isEmpty(lockStatusStr) && lockStatusStr.equalsIgnoreCase("true")) {
+        if (!TextUtils.isEmpty(lockStatusStr)
+                && lockStatusStr.equalsIgnoreCase("true")) {
             lock = true;
         }
 
         if (lock) {
-            mTvLock.setText(getString(R.string.box_lock) + " " + lockReasonStr);
+            mTvLock.setText(/* getString(R.string.box_lock) + " " + */lockReasonStr);
         }
 
         mRlLock.setVisibility(lock ? View.VISIBLE : View.GONE);
@@ -816,7 +855,8 @@ public class ExLauncher extends Activity {
         String menuStatusStr = mSharedPreferences.getString(
                 JsonAdData.MENU_STATUS, "true");
         boolean show = true;
-        if (!TextUtils.isEmpty(menuStatusStr) && menuStatusStr.equalsIgnoreCase("false")) {
+        if (!TextUtils.isEmpty(menuStatusStr)
+                && menuStatusStr.equalsIgnoreCase("false")) {
             show = false;
         }
 
@@ -1232,6 +1272,8 @@ public class ExLauncher extends Activity {
         mStaticAdvBitmapMap = new HashMap<String, Bitmap>();
         mCurrentFirmwareVer = getCurrentFirmwareVer();
         mContext = this;
+        mSavedMacEth = mSharedPreferences.getString(SAVED_ETH_MAC, null);
+        mSavedMacWifi = mSharedPreferences.getString(SAVED_WIFI_MAC, null);
 
         // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
