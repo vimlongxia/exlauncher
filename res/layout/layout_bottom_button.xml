@@ -55,7 +55,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_tv"
+                    android:background="@drawable/bottom_buttom_tv_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -82,7 +82,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_movie"
+                    android:background="@drawable/bottom_buttom_movie_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -109,7 +109,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_drama"
+                    android:background="@drawable/bottom_buttom_drama_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -136,7 +136,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_youtube"
+                    android:background="@drawable/bottom_buttom_youtube_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -163,7 +163,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_games"
+                    android:background="@drawable/bottom_buttom_games_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -190,7 +190,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_radio"
+                    android:background="@drawable/bottom_buttom_radio_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -217,7 +217,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_apps"
+                    android:background="@drawable/bottom_buttom_apps_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 
@@ -244,7 +244,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
-                    android:background="@drawable/ic_button_settings"
+                    android:background="@drawable/bottom_buttom_settings_bg"
                     android:contentDescription="@string/app_name"
                     android:focusableInTouchMode="true" />
 

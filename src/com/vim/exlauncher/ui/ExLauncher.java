@@ -860,10 +860,9 @@ public class ExLauncher extends Activity {
         for (int i = 0; i < mBottomButtonIdList.size(); i++) {
             button = (BottomImageButton) findViewById(mBottomButtonIdList
                     .get(i));
-            // button.setFocusable(show);
-            // button.setClickable(show);
-            // button.setFocusableInTouchMode(show);
-            button.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+            button.setFocusable(show);
+            button.setClickable(show);
+            button.setFocusableInTouchMode(show);
         }
     }
 
@@ -1585,14 +1584,14 @@ public class ExLauncher extends Activity {
         // mIbApps.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
         // mIbSetting.setOnFocusChangeListener(mImageButtonOnFocusChangeListener);
 
-        mIbTv.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbMovies.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbDrama.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbYoutube.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbGames.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbRadio.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbApps.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
-        mIbSetting.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbTv.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbMovies.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbDrama.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbYoutube.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbGames.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbRadio.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbApps.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
+        // mIbSetting.setOnFocusChangeListener(mBottomButtonOnFocusChangeListener);
 
         // showViewLength(mIbTv);
         // showViewLength(mIbMovies);
