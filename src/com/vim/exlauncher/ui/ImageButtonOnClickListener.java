@@ -52,7 +52,7 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_drama:
-            intent.setComponent(new ComponentName("com.sharebox.Drama",
+            intent.setComponent(new ComponentName("com.sharebox.fitvDrama",
                     "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 
@@ -62,12 +62,12 @@ public class ImageButtonOnClickListener implements OnClickListener {
             break;
 
         case R.id.ib_movies:
-            intent.setComponent(new ComponentName("com.farcore.videoplayer",
-                    "com.farcore.videoplayer.FileList"));
+            intent.setComponent(new ComponentName("com.sharebox.fitvVod",
+                    "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 
         case R.id.ib_radio:
-            intent.setComponent(new ComponentName("com.sharebox.Radio",
+            intent.setComponent(new ComponentName("com.sharebox.fitvRadio",
                     "com.sharebox.iptvCore.activities.MainActivity"));
             break;
 

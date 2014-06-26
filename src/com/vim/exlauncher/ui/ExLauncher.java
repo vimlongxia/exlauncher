@@ -1309,6 +1309,8 @@ public class ExLauncher extends Activity {
                     + (i + 1) + ".png");
         }
 
+        LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, LOGO_NAME);
+
         this.deleteDatabase(BottomMsgContentProvider.DATABASE_NAME);
     }
 
