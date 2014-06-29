@@ -1309,7 +1309,7 @@ public class ExLauncher extends Activity {
 
         LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, LOGO_NAME);
 
-        this.deleteDatabase(ExLauncherContentProvider.DATABASE_NAME);
+        // this.deleteDatabase(ExLauncherContentProvider.DATABASE_NAME);
     }
 
     @Override
@@ -1347,7 +1347,7 @@ public class ExLauncher extends Activity {
         // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
         mIbTv.requestFocus();
-        
+
         startService(new Intent(this, GroupService.class));
 
         removeAllOldData();
