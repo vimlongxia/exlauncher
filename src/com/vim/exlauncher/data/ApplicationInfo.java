@@ -1,5 +1,7 @@
 package com.vim.exlauncher.data;
 
+import android.R.bool;
+import android.R.integer;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
@@ -31,12 +33,15 @@ public class ApplicationInfo {
      */
     public Drawable icon;
 
+    public int dataType;
+    
     /**
      * When set to true, indicates that the icon has been resized.
      */
     public boolean filtered;
 
     public ComponentName componentName;
+    public String pkg;
     
     /**
      * Creates the application intent based on a component name and various launch flags.

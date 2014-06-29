@@ -7,7 +7,6 @@ import com.vim.exlauncher.R;
 
 public class Weather {
     private static Weather mWeather;
-    private static final String TAG = "Weather";
     
     private Map<String, Integer> mIconMap;
     

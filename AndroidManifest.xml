@@ -19,6 +19,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
     <application
         android:allowBackup="true"
@@ -46,9 +47,11 @@
             android:launchMode="singleTask" />
 
         <provider
-            android:name=".data.BottomMsgContentProvider"
-            android:authorities="bottommsg"
+            android:name=".data.ExLauncherContentProvider"
+            android:authorities="com.vim.exlauncher"
             android:exported="false" />
+        
+        <service android:name=".ui.GroupService"/>
     </application>
 
 </manifest>

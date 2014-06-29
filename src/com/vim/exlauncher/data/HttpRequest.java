@@ -14,7 +14,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
-import android.R.integer;
 import android.text.TextUtils;
 import android.util.Log;
 

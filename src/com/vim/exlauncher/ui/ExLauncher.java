@@ -34,7 +34,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.State;
@@ -45,7 +44,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -63,7 +61,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.vim.exlauncher.R;
-import com.vim.exlauncher.data.BottomMsgContentProvider;
+import com.vim.exlauncher.data.ExLauncherContentProvider;
 import com.vim.exlauncher.data.HttpRequest;
 import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
@@ -1311,7 +1309,7 @@ public class ExLauncher extends Activity {
 
         LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, LOGO_NAME);
 
-        this.deleteDatabase(BottomMsgContentProvider.DATABASE_NAME);
+        this.deleteDatabase(ExLauncherContentProvider.DATABASE_NAME);
     }
 
     @Override
@@ -1349,6 +1347,8 @@ public class ExLauncher extends Activity {
         // mDataHandler.sendEmptyMessage(MSG_DATA_GET_JSON);
 
         mIbTv.requestFocus();
+        
+        startService(new Intent(this, GroupService.class));
 
         removeAllOldData();
 
@@ -1399,6 +1399,7 @@ public class ExLauncher extends Activity {
         unregisterStatusReceiver();
         mDataHandler.sendEmptyMessage(MSG_DATA_QUIT);
         mPicHandler.sendEmptyMessage(MSG_PIC_QUIT);
+        stopService(new Intent(this, GroupService.class));
     }
 
     @Override

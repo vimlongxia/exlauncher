@@ -20,7 +20,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.vim.exlauncher.R;
-import com.vim.exlauncher.data.BottomMsgContentProvider;
+import com.vim.exlauncher.data.ExLauncherContentProvider;
 import com.vim.exlauncher.data.LauncherUtils;
 import com.vim.exlauncher.data.MsgContentUtils;
 
@@ -53,9 +53,9 @@ public class MsgButtonOnClickListener implements OnClickListener {
         public void bindView(View view, Context context, Cursor cursor) {
             // TODO Auto-generated method stub
             int msgId = cursor.getInt(cursor
-                    .getColumnIndex(BottomMsgContentProvider.MSG_ID));
+                    .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_MSG_ID));
             String bottomMsg = cursor.getString(cursor
-                    .getColumnIndex(BottomMsgContentProvider.BOTTOM_MSG));
+                    .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_BOTTOM_MSG));
 
             TextView tvMsgId = (TextView) view.findViewById(R.id.tv_msg_id);
             TextView tvBottomMsg = (TextView) view
@@ -90,7 +90,7 @@ public class MsgButtonOnClickListener implements OnClickListener {
                 // TODO Auto-generated method stub
                 if (mMsgCursor.moveToPosition(index)) {
                     String bottomMsg = mMsgCursor.getString(mMsgCursor
-                            .getColumnIndex(BottomMsgContentProvider.BOTTOM_MSG));
+                            .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_BOTTOM_MSG));
                     tvMsgContent.setText(bottomMsg);
                 }
             }

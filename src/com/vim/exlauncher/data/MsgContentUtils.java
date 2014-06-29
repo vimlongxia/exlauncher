@@ -4,8 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.nfc.Tag;
-import android.provider.ContactsContract.Contacts.Data;
 import android.util.Log;
 
 public class MsgContentUtils {
@@ -13,51 +11,54 @@ public class MsgContentUtils {
 
     public static void inserIntoMsgTable(Context context, String msgNo, String bottomMsg){
         ContentValues contentValues = new ContentValues();
-        contentValues.put(BottomMsgContentProvider.MSG_ID, msgNo);
-        contentValues.put(BottomMsgContentProvider.BOTTOM_MSG, bottomMsg);
+        contentValues.put(ExLauncherContentProvider.TABLE_MSG_MSG_ID, msgNo);
+        contentValues.put(ExLauncherContentProvider.TABLE_MSG_BOTTOM_MSG, bottomMsg);
         
-        Uri insertUri = context.getContentResolver().insert(BottomMsgContentProvider.BOTTOM_MSG_URI, contentValues);
-        Log.d(TAG, "[inserIntoMsgTable] insertUri : " + insertUri);
+        Uri insertUri = context.getContentResolver().insert(ExLauncherContentProvider.URI_MSG, contentValues);
+        logd("[inserIntoMsgTable] insertUri : " + insertUri);
     }
     
     public static boolean isNewMsg(Context context, String msgNo) {
         boolean isNew = false;
-        String selection = BottomMsgContentProvider.MSG_ID + "=?";
+        String selection = ExLauncherContentProvider.TABLE_MSG_MSG_ID + "=?";
         String[] selectionArgs = new String[] { msgNo + "" };
         Cursor cursor = context.getContentResolver().query(
-                BottomMsgContentProvider.BOTTOM_MSG_URI,
-                BottomMsgContentProvider.PROJECTION, selection, selectionArgs,
+                ExLauncherContentProvider.URI_MSG,
+                ExLauncherContentProvider.PROJECTION_MSG, selection, selectionArgs,
                 null);
 
         if (cursor == null) {
+            logd("[isNewMsg] cursor is null, this msg " + msgNo + " is new.");
             return true;
         }
 
         if (cursor.getCount() == 0) {
+            logd("[isNewMsg] cursor counts 0, this msg " + msgNo + " is new.");
             isNew = true;
         } else {
             isNew = false;
         }
 
         cursor.close();
-        Log.d(TAG, "[isNewMsg] msgNo : " + msgNo + ", isNew : " + isNew);
+        logd("[isNewMsg] msgNo : " + msgNo + ", isNew : " + isNew);
         return isNew;
     }
 
     public static boolean reachMaxNum(Context context) {
         boolean reach = false;
         Cursor cursor = context.getContentResolver().query(
-                BottomMsgContentProvider.BOTTOM_MSG_URI,
-                BottomMsgContentProvider.PROJECTION, null, null, null);
+                ExLauncherContentProvider.URI_MSG,
+                ExLauncherContentProvider.PROJECTION_MSG, null, null, null);
 
         if (cursor == null) {
+            logd("[reachMaxNum] cursor is null, we don't get anything, just return false");
             return false;
         }
 
         reach = !(cursor.getCount() < JsonAdData.MAX_RECENT_MSG);
 
         cursor.close();
-        Log.d(TAG, "[reachMaxNum] reach : " + reach);
+        logd("[reachMaxNum] reach : " + reach);
         return reach;
     }
 
@@ -65,8 +66,8 @@ public class MsgContentUtils {
         int earlestMsgId = -1;
 
         Cursor cursor = context.getContentResolver().query(
-                BottomMsgContentProvider.BOTTOM_MSG_URI, null, null, null,
-                BottomMsgContentProvider.ORDER_ASC);
+                ExLauncherContentProvider.URI_MSG, null, null, null,
+                ExLauncherContentProvider.TABLE_MSG_ORDER_ASC);
 
         if ((cursor == null) || (cursor.getCount() == 0)) {
             return -1;
@@ -75,7 +76,7 @@ public class MsgContentUtils {
         try {
             if (cursor.moveToFirst()) {
                 earlestMsgId = cursor.getInt(cursor
-                        .getColumnIndex(BottomMsgContentProvider.MSG_ID));
+                        .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_MSG_ID));
             } else {
                 earlestMsgId = -1;
             }
@@ -86,31 +87,35 @@ public class MsgContentUtils {
             cursor.close();
         }
 
-        Log.d(TAG, "[getEarlestMsgId] earlestMsgId : " + earlestMsgId);
+        logd("[getEarlestMsgId] earlestMsgId : " + earlestMsgId);
         return earlestMsgId;
     }
 
     public static void deleteMsgById(Context context, String msgId) {
-        String selection = BottomMsgContentProvider.MSG_ID + "=?";
+        String selection = ExLauncherContentProvider.TABLE_MSG_MSG_ID + "=?";
         String selectionArgs[] = new String[] { msgId + "" };
 
         int row = context.getContentResolver().delete(
-                BottomMsgContentProvider.BOTTOM_MSG_URI, selection,
+                ExLauncherContentProvider.URI_MSG, selection,
                 selectionArgs);
 
-        Log.d(TAG, "[deleteMsgById] msgId : " + msgId + ", row : " + row);
+        logd("[deleteMsgById] msgId : " + msgId + ", row : " + row);
     }
     
     public static Cursor getAllBottomMsgOrderByDesc(Context context) {
         Cursor cursor = context.getContentResolver().query(
-                BottomMsgContentProvider.BOTTOM_MSG_URI,null,null,
-                null, BottomMsgContentProvider.ORDER_DESC);
+                ExLauncherContentProvider.URI_MSG,null,null,
+                null, ExLauncherContentProvider.TABLE_MSG_ORDER_DESC);
         
-        Log.d(TAG, "[getAllBottomMsgOrderByDesc] cursor : " + cursor);
+        logd("[getAllBottomMsgOrderByDesc] cursor : " + cursor);
         if (cursor != null) {
-            Log.d(TAG, "[getAllBottomMsgOrderByDesc] cursor counts : " + cursor.getCount());
+            logd("[getAllBottomMsgOrderByDesc] cursor counts : " + cursor.getCount());
         }
         
         return cursor;
+    }
+    
+    private static void logd(String strs){
+        Log.d(TAG, strs);
     }
 }

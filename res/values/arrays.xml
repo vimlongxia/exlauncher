@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="add_to_group_type">
+        <item>Add to Apps Group</item>
+        <item>Add to Games Group</item>
+        <item>Add to Music Group</item>
+        <item>Add to Media Group</item>
+    </string-array>
+
+    <string-array name="remove_group_type">
+        <item>Remove from this Group</item>
+    </string-array>
+
+    <string-array name="group_type">
+        <item>Apps</item>
+        <item>Games</item>
+        <item>Music</item>
+        <item>Media</item>
+    </string-array>
+
+</resources>

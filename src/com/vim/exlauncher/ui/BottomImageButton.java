@@ -1,9 +1,7 @@
 package com.vim.exlauncher.ui;
 
-import android.R.integer;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -15,17 +13,13 @@ import android.widget.ImageButton;
 import com.vim.exlauncher.R;
 
 public class BottomImageButton extends ImageButton {
-    private Context mContext;
-
     public BottomImageButton(Context context) {
         super(context);
-        mContext = context;
     }
 
     public BottomImageButton(Context context, AttributeSet attrs) {
         super(context, attrs);
         // TODO Auto-generated constructor stub
-        mContext = context;
     }
 
     private Bitmap zoomBitmap(Bitmap bitmap, int w, int h) {
