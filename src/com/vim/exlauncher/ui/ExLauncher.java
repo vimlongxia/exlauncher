@@ -66,6 +66,7 @@ import com.vim.exlauncher.data.HttpRequest;
 import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
 import com.vim.exlauncher.data.LauncherUtils;
+import com.vim.exlauncher.data.MsgContentUtils;
 import com.vim.exlauncher.data.Weather;
 
 public class ExLauncher extends Activity {
@@ -1309,7 +1310,7 @@ public class ExLauncher extends Activity {
 
         LauncherUtils.deleteFile(PIC_FILE_PATH_PREFIX, LOGO_NAME);
 
-        // this.deleteDatabase(ExLauncherContentProvider.DATABASE_NAME);
+        MsgContentUtils.deleteAllMsg(this);
     }
 
     @Override

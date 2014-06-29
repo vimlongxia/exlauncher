@@ -9,23 +9,26 @@ import android.util.Log;
 public class MsgContentUtils {
     private static final String TAG = "MsgContentUtils";
 
-    public static void inserIntoMsgTable(Context context, String msgNo, String bottomMsg){
+    public static void inserIntoMsgTable(Context context, String msgNo,
+            String bottomMsg) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(ExLauncherContentProvider.TABLE_MSG_MSG_ID, msgNo);
-        contentValues.put(ExLauncherContentProvider.TABLE_MSG_BOTTOM_MSG, bottomMsg);
-        
-        Uri insertUri = context.getContentResolver().insert(ExLauncherContentProvider.URI_MSG, contentValues);
+        contentValues.put(ExLauncherContentProvider.TABLE_MSG_BOTTOM_MSG,
+                bottomMsg);
+
+        Uri insertUri = context.getContentResolver().insert(
+                ExLauncherContentProvider.URI_MSG, contentValues);
         logd("[inserIntoMsgTable] insertUri : " + insertUri);
     }
-    
+
     public static boolean isNewMsg(Context context, String msgNo) {
         boolean isNew = false;
         String selection = ExLauncherContentProvider.TABLE_MSG_MSG_ID + "=?";
         String[] selectionArgs = new String[] { msgNo + "" };
         Cursor cursor = context.getContentResolver().query(
                 ExLauncherContentProvider.URI_MSG,
-                ExLauncherContentProvider.PROJECTION_MSG, selection, selectionArgs,
-                null);
+                ExLauncherContentProvider.PROJECTION_MSG, selection,
+                selectionArgs, null);
 
         if (cursor == null) {
             logd("[isNewMsg] cursor is null, this msg " + msgNo + " is new.");
@@ -75,8 +78,9 @@ public class MsgContentUtils {
 
         try {
             if (cursor.moveToFirst()) {
-                earlestMsgId = cursor.getInt(cursor
-                        .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_MSG_ID));
+                earlestMsgId = cursor
+                        .getInt(cursor
+                                .getColumnIndex(ExLauncherContentProvider.TABLE_MSG_MSG_ID));
             } else {
                 earlestMsgId = -1;
             }
@@ -96,26 +100,33 @@ public class MsgContentUtils {
         String selectionArgs[] = new String[] { msgId + "" };
 
         int row = context.getContentResolver().delete(
-                ExLauncherContentProvider.URI_MSG, selection,
-                selectionArgs);
+                ExLauncherContentProvider.URI_MSG, selection, selectionArgs);
 
         logd("[deleteMsgById] msgId : " + msgId + ", row : " + row);
     }
-    
+
+    public static void deleteAllMsg(Context context) {
+        int row = context.getContentResolver().delete(
+                ExLauncherContentProvider.URI_MSG, null, null);
+
+        logd("[deleteMsgById] row : " + row);
+    }
+
     public static Cursor getAllBottomMsgOrderByDesc(Context context) {
         Cursor cursor = context.getContentResolver().query(
-                ExLauncherContentProvider.URI_MSG,null,null,
-                null, ExLauncherContentProvider.TABLE_MSG_ORDER_DESC);
-        
+                ExLauncherContentProvider.URI_MSG, null, null, null,
+                ExLauncherContentProvider.TABLE_MSG_ORDER_DESC);
+
         logd("[getAllBottomMsgOrderByDesc] cursor : " + cursor);
         if (cursor != null) {
-            logd("[getAllBottomMsgOrderByDesc] cursor counts : " + cursor.getCount());
+            logd("[getAllBottomMsgOrderByDesc] cursor counts : "
+                    + cursor.getCount());
         }
-        
+
         return cursor;
     }
-    
-    private static void logd(String strs){
+
+    private static void logd(String strs) {
         Log.d(TAG, strs);
     }
 }

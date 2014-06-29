@@ -27,8 +27,8 @@ public class ExLauncherContentProvider extends ContentProvider {
     public static final String TABLE_MSG_ORDER_DESC = TABLE_MSG_MSG_ID
             + " DESC";
 
-    public static final Uri URI_MSG = Uri.parse("content://" + AUTHORITY
-            + "/" + TABLE_MSG);
+    public static final Uri URI_MSG = Uri.parse("content://" + AUTHORITY + "/"
+            + TABLE_MSG);
     public static final String[] PROJECTION_MSG = new String[] {
             TABLE_MSG_MSG_ID, TABLE_MSG_BOTTOM_MSG };
 
@@ -45,7 +45,7 @@ public class ExLauncherContentProvider extends ContentProvider {
     public static final Uri URI_GROUP = Uri.parse("content://" + AUTHORITY
             + "/" + TABLE_GROUP);
     public static final String[] PROJECTION_GROUP = new String[] {
-        TABLE_GROUP_TYPE, TABLE_GROUP_PACKAGE };
+            TABLE_GROUP_TYPE, TABLE_GROUP_PACKAGE };
 
     private static final int URL_MSG_ALL = 1;
     private static final int URL_MSG_ID = 2;
@@ -216,13 +216,14 @@ public class ExLauncherContentProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             // Set up the database schema
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MSG + " (" + TABLE_MSG_ID
-                    + " INTEGER PRIMARY KEY," + TABLE_MSG_MSG_ID + " INTEGER,"
-                    + TABLE_MSG_BOTTOM_MSG + " TEXT);");
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MSG + " ("
+                    + TABLE_MSG_ID + " INTEGER PRIMARY KEY," + TABLE_MSG_MSG_ID
+                    + " INTEGER," + TABLE_MSG_BOTTOM_MSG + " TEXT);");
 
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_GROUP + " (" + TABLE_GROUP_ID
-                    + " INTEGER PRIMARY KEY," + TABLE_GROUP_TYPE + " INTEGER,"
-                    + TABLE_GROUP_PACKAGE + " TEXT);");
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_GROUP + " ("
+                    + TABLE_GROUP_ID + " INTEGER PRIMARY KEY,"
+                    + TABLE_GROUP_TYPE + " INTEGER," + TABLE_GROUP_PACKAGE
+                    + " TEXT);");
         }
     }
 }
