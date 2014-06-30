@@ -18,4 +18,14 @@
         <item>Media</item>
     </string-array>
 
+    <string-array name="preinstall_pkg_games">
+        <item>com.rovio.angrybirds</item>
+    </string-array>
+
+    <string-array name="preinstall_pkg_music">
+    </string-array>
+
+    <string-array name="preinstall_pkg_media">
+    </string-array>
+
 </resources>

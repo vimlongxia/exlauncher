@@ -1,7 +1,9 @@
 package com.vim.exlauncher.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.Service;
@@ -25,6 +27,8 @@ import com.vim.exlauncher.data.GroupUtils;
 public class GroupService extends Service {
     private static final String TAG = "GrouService";
     private ArrayList<String> mArrayListPendingPkg;
+    private ArrayList<String> mArrayListPreinstallPkg;
+    private Map<String, Integer> mMapPreinstallPkg;
 
     private AlertDialog mPkgDlg;
     private Drawable mApkIcon;
@@ -44,8 +48,20 @@ public class GroupService extends Service {
             }
 
             if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
-                mArrayListPendingPkg.add(pkg);
-                showAppAddedDlg(pkg);
+                if (!isLauncher(pkg)){
+                    logd("[onReceive] this pkg " + pkg + " is not a app.");
+                    return;
+                }
+
+                if (mArrayListPreinstallPkg.contains(pkg)) {
+                    logd("[onReceive] this pkg " + pkg
+                            + " is contained in the preinstall list.");
+                    getPkgTitleAndIcon(pkg);
+                    addPkgToDb(mMapPreinstallPkg.get(pkg), pkg);
+                } else {
+                    mArrayListPendingPkg.add(pkg);
+                    showAppAddedDlg(pkg);
+                }
             } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
                 processAppRemoved(pkg);
             }
@@ -81,6 +97,32 @@ public class GroupService extends Service {
         }
     }
 
+    private boolean isLauncher(String pkg){
+        boolean ret = false;
+        PackageManager manager = getPackageManager();
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        final List<ResolveInfo> apps = manager.queryIntentActivities(
+                mainIntent, 0);
+
+        if (apps == null) {
+            Log.e(TAG, "[getApkData] this is no any apks in this system!");
+            return false;
+        }
+
+        for (int i = 0; i < apps.size(); i++) {
+            ResolveInfo info = apps.get(i);
+
+            if (info.activityInfo.applicationInfo.packageName
+                    .contains(pkg)) {
+                logd("[isLauncher] match! this pkg " + pkg + " is a app.");
+                return true;
+            }
+        }
+        return ret;
+    }
+
     private void showAppAddedDlg(final String pkg) {
         if (mPkgDlg != null) {
             logd("package dialog is showing, some pkg must be processing!");
@@ -98,7 +140,8 @@ public class GroupService extends Service {
                         logd("[onClick] whichButton : " + whichButton
                                 + ", pkg : " + pkg);
 
-                        // the first type is INDEX_APPS, and we don't need to save this type
+                        // the first type is INDEX_APPS, and we don't need to
+                        // save this type
                         addPkgToDb(whichButton + 1, pkg);
                     }
                 });
@@ -135,7 +178,8 @@ public class GroupService extends Service {
 
     private void addPkgToDb(int groupType, String pkg) {
         GroupUtils.deleteByPkgAndType(this, pkg, groupType);
-        GroupUtils.inserIntoGroupTable(this, groupType, pkg, mApkTitle.toString());
+        GroupUtils.inserIntoGroupTable(this, groupType, pkg,
+                mApkTitle.toString());
     }
 
     @Override
@@ -153,12 +197,47 @@ public class GroupService extends Service {
 
         mArrayListPendingPkg = new ArrayList<String>();
 
+        initPreinstallList();
+
         // Register intent receivers
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_PACKAGE_ADDED);
         filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
         filter.addDataScheme("package");
         registerReceiver(mAppReceiver, filter);
+    }
+
+    private void initPreinstallList() {
+        mArrayListPreinstallPkg = new ArrayList<String>();
+        mMapPreinstallPkg = new HashMap<String, Integer>();
+
+        String[] preinstallPkgGames = this.getResources().getStringArray(
+                R.array.preinstall_pkg_games);
+        String[] preinstallPkgMusic = this.getResources().getStringArray(
+                R.array.preinstall_pkg_music);
+        String[] preinstallPkgMedia = this.getResources().getStringArray(
+                R.array.preinstall_pkg_media);
+
+        if ((preinstallPkgGames != null) && (preinstallPkgGames.length > 0)) {
+            for (String pkg : preinstallPkgGames) {
+                mArrayListPreinstallPkg.add(pkg);
+                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_GAMES);
+            }
+        }
+
+        if ((preinstallPkgMusic != null) && (preinstallPkgMusic.length > 0)) {
+            for (String pkg : preinstallPkgMusic) {
+                mArrayListPreinstallPkg.add(pkg);
+                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_MUSIC);
+            }
+        }
+
+        if ((preinstallPkgMedia != null) && (preinstallPkgMedia.length > 0)) {
+            for (String pkg : preinstallPkgMedia) {
+                mArrayListPreinstallPkg.add(pkg);
+                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_MEDIA);
+            }
+        }
     }
 
     @Override
