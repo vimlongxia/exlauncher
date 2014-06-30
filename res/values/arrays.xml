@@ -20,12 +20,27 @@
 
     <string-array name="preinstall_pkg_games">
         <item>com.rovio.angrybirds</item>
+        <item>com.rovio.angrybirdsrio</item>
     </string-array>
 
     <string-array name="preinstall_pkg_music">
     </string-array>
 
     <string-array name="preinstall_pkg_media">
+    </string-array>
+
+    <string-array name="preinstall_pkg_other">
+        <item>com.dropbox.android</item>
+        <item>com.facebook.katana</item>
+        <item>com.weather.Weather</item>
+        <item>flipboard.app</item>
+        <item>live.cool.InstaDownloader</item>
+        <item>com.mxtech.videoplayer.pro</item>
+        <item>com.skype.rover</item>
+        <item>tunein.player</item>
+        <item>com.twitter.android</item>
+        <item>org.xbmc.xbmc</item>
+        <item>com.google.android.youtube.googletv</item>
     </string-array>
 
 </resources>

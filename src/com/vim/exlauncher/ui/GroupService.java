@@ -56,8 +56,14 @@ public class GroupService extends Service {
                 if (mArrayListPreinstallPkg.contains(pkg)) {
                     logd("[onReceive] this pkg " + pkg
                             + " is contained in the preinstall list.");
+                    int index = mMapPreinstallPkg.get(pkg);
+                    if (index == AllApps3D.INDEX_APPS){
+                        logd("[onReceive] this apk does not belong to any type");
+                        return;
+                    }
+
                     getPkgTitleAndIcon(pkg);
-                    addPkgToDb(mMapPreinstallPkg.get(pkg), pkg);
+                    addPkgToDb(index, pkg);
                 } else {
                     mArrayListPendingPkg.add(pkg);
                     showAppAddedDlg(pkg);
@@ -217,6 +223,8 @@ public class GroupService extends Service {
                 R.array.preinstall_pkg_music);
         String[] preinstallPkgMedia = this.getResources().getStringArray(
                 R.array.preinstall_pkg_media);
+        String[] preinstallPkgOther = this.getResources().getStringArray(
+                R.array.preinstall_pkg_other);
 
         if ((preinstallPkgGames != null) && (preinstallPkgGames.length > 0)) {
             for (String pkg : preinstallPkgGames) {
@@ -236,6 +244,13 @@ public class GroupService extends Service {
             for (String pkg : preinstallPkgMedia) {
                 mArrayListPreinstallPkg.add(pkg);
                 mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_MEDIA);
+            }
+        }
+
+        if ((preinstallPkgOther != null) && (preinstallPkgOther.length > 0)) {
+            for (String pkg : preinstallPkgMedia) {
+                mArrayListPreinstallPkg.add(pkg);
+                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_APPS);
             }
         }
     }
