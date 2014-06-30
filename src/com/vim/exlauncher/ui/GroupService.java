@@ -97,8 +97,9 @@ public class GroupService extends Service {
                         // TODO Auto-generated method stub
                         logd("[onClick] whichButton : " + whichButton
                                 + ", pkg : " + pkg);
-                        addPkgToDb(whichButton, pkg);
-                        mArrayListPendingPkg.remove(pkg);
+
+                        // the first type is INDEX_APPS, and we don't need to save this type
+                        addPkgToDb(whichButton + 1, pkg);
                     }
                 });
 
@@ -113,6 +114,7 @@ public class GroupService extends Service {
                     mPkgDlg = null;
                 }
 
+                mArrayListPendingPkg.remove(pkg);
                 if (mArrayListPendingPkg.size() > 0) {
                     logd("[onDismiss] mArrayListPendingPkg size : "
                             + mArrayListPendingPkg.size()
@@ -132,12 +134,8 @@ public class GroupService extends Service {
     }
 
     private void addPkgToDb(int groupType, String pkg) {
-        if (groupType == AllApps3D.INDEX_APPS){
-            return;
-        }
-
         GroupUtils.deleteByPkgAndType(this, pkg, groupType);
-        GroupUtils.inserIntoGroupTable(this, groupType, pkg);
+        GroupUtils.inserIntoGroupTable(this, groupType, pkg, mApkTitle.toString());
     }
 
     @Override

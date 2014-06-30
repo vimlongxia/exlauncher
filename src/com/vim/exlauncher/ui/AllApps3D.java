@@ -10,15 +10,18 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -41,16 +44,21 @@ public class AllApps3D extends Activity {
     private ApplicationsAdapter mAppAdapter;
     private AppReceiver mAppReceiver;
 
-    private int mDataType;
+    private int mCurrentDataType;
     private String[] mAllGroups;
     private String[] mGroupData;
     private AlertDialog mContextDlg;
+    private ContentObserver mContentObserver;
 
     public static final String DATA_TYPE = "data_type";
 
+    // this type means the selected item is an APK
     private static final int INDEX_APK = -2;
+
+    // default means that curent page stands on the group selection page
     private static final int INDEX_DEFAULT = -1;
 
+    // the following groups means that we are in the corresponding sub page
     public static final int INDEX_APPS = 0;
     public static final int INDEX_GAMES = 1;
     public static final int INDEX_MUSIC = 2;
@@ -68,8 +76,22 @@ public class AllApps3D extends Activity {
         setContentView(R.layout.home);
         mAppReceiver = new AppReceiver();
 
-        mDataType = getIntent().getIntExtra(DATA_TYPE, INDEX_DEFAULT);
+        mCurrentDataType = getIntent().getIntExtra(DATA_TYPE, INDEX_DEFAULT);
         mAllGroups = getResources().getStringArray(R.array.group_type);
+
+        mContentObserver = new ContentObserver(new Handler()) {
+            @Override
+            public void onChange(boolean selfChange) {
+                // TODO Auto-generated method stub
+                super.onChange(selfChange);
+                logd("[onChange] selfChange : " + selfChange);
+                
+                loadApplications();
+                bindApplications();
+            }
+        };
+
+        this.getContentResolver().registerContentObserver(ExLauncherContentProvider.URI_GROUP, true, mContentObserver);
     }
 
     @Override
@@ -99,12 +121,31 @@ public class AllApps3D extends Activity {
 
     protected void onDestroy() {
         super.onDestroy();
+        this.getContentResolver().unregisterContentObserver(mContentObserver);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // TODO Auto-generated method stub
+        switch(keyCode){
+        case KeyEvent.KEYCODE_BACK:
+            if (mCurrentDataType != INDEX_DEFAULT){
+                mCurrentDataType = INDEX_DEFAULT;
+
+                loadApplications();
+                bindApplications();
+                return true;
+            }
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
 
     private void getAllGroupData() {
         if (mApplications == null) {
             mApplications = new ArrayList<ApplicationInfo>();
         }
+        mApplications.clear();
 
         for (int i = 0; i < INDEX_SIZE; i++) {
             ApplicationInfo application = new ApplicationInfo();
@@ -141,12 +182,13 @@ public class AllApps3D extends Activity {
     }
 
     private void getApkData() {
-        logd("[getApkData] mDataType : " + mDataType + ", mGroupData : "
+        logd("[getApkData] mDataType : " + mCurrentDataType + ", mGroupData : "
                 + mGroupData);
-        if ((mDataType != INDEX_APPS)
+        if ((mCurrentDataType != INDEX_APPS)
                 && ((mGroupData == null) || (mGroupData.length == 0))) {
             // type games/music/media has no data
-            logd("[getApkData] mDataType : " + mDataType + " has no data yet.");
+            logd("[getApkData] mDataType : " + mCurrentDataType
+                    + " has no data yet.");
             if (mApplications == null) {
                 mApplications = new ArrayList<ApplicationInfo>();
             }
@@ -174,7 +216,7 @@ public class AllApps3D extends Activity {
         }
         mApplications.clear();
 
-        if (mDataType == INDEX_APPS) {
+        if (mCurrentDataType == INDEX_APPS) {
             for (int i = 0; i < count; i++) {
                 ApplicationInfo application = new ApplicationInfo();
                 ResolveInfo info = apps.get(i);
@@ -212,7 +254,8 @@ public class AllApps3D extends Activity {
                     if (info.activityInfo.applicationInfo.packageName
                             .contains(mGroupData[j])) {
                         logd("[getApkData] match! mGroupData[" + j + "] : "
-                                + mGroupData[j] + " in type " + mDataType);
+                                + mGroupData[j] + " in type "
+                                + mCurrentDataType);
                         mApplications.add(application);
                         break;
                     }
@@ -222,10 +265,10 @@ public class AllApps3D extends Activity {
     }
 
     private void getPkgListByType() {
-        Cursor cursor = GroupUtils.getGroupDataByType(this, mDataType);
+        Cursor cursor = GroupUtils.getGroupDataByType(this, mCurrentDataType);
         if ((cursor == null) || (cursor.getCount() == 0)) {
             logd("[getPkgListByType] we don't get any date of this type : "
-                    + mDataType);
+                    + mCurrentDataType);
             mGroupData = null;
             return;
         }
@@ -246,23 +289,23 @@ public class AllApps3D extends Activity {
             cursor.close();
         }
     }
-
+    
     private void loadApplications() {
-        if (mDataType == INDEX_DEFAULT) {
+        if (mCurrentDataType == INDEX_DEFAULT) {
             getAllGroupData();
         } else {
             getPkgListByType();
             getApkData();
         }
     }
-    
-    private void addPkgToDb(int groupType, String pkg) {
+
+    private void addPkgToDb(int groupType, String pkg, String title) {
         if (groupType == AllApps3D.INDEX_APPS) {
             return;
         }
-        
+
         GroupUtils.deleteByPkgAndType(this, pkg, groupType);
-        GroupUtils.inserIntoGroupTable(this, groupType, pkg);
+        GroupUtils.inserIntoGroupTable(this, groupType, pkg, title);
     }
 
     private void showAppAddedDlg(final ApplicationInfo app) {
@@ -274,7 +317,8 @@ public class AllApps3D extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(app.title);
 
-        if ((mDataType >= INDEX_GAMES) && (mDataType <= INDEX_MEDIA)) {
+        if ((mCurrentDataType >= INDEX_GAMES)
+                && (mCurrentDataType <= INDEX_MEDIA)) {
             builder.setItems(R.array.remove_group_type,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -283,7 +327,8 @@ public class AllApps3D extends Activity {
                             // TODO Auto-generated method stub
                             logd("[onClick] whichButton : " + whichButton
                                     + ", pkg : " + app.pkg);
-                            GroupUtils.deleteByPkgAndType(AllApps3D.this, app.pkg, mDataType);
+                            GroupUtils.deleteByPkgAndType(AllApps3D.this,
+                                    app.pkg, mCurrentDataType);
                             loadApplications();
                             bindApplications();
                         }
@@ -297,7 +342,7 @@ public class AllApps3D extends Activity {
                             // TODO Auto-generated method stub
                             logd("[onClick] whichButton : " + whichButton
                                     + ", pkg : " + app.pkg);
-                            addPkgToDb(whichButton, app.pkg);
+                            addPkgToDb(whichButton + 1, app.pkg, app.title.toString());
                         }
                     });
         }
@@ -330,7 +375,7 @@ public class AllApps3D extends Activity {
             mGrid = (GridView) findViewById(R.id.all_apps);
         }
 
-        logd("[bindApplications] mApplications size : " + mApplications.size());
+        logd("[bindApplications] mApplications size : " + mApplications.size() + ", mCurrentDataType : " + mCurrentDataType);
         mGrid.setAdapter(mAppAdapter);
         mGrid.setSelection(0);
         mGrid.setOnItemClickListener(new OnItemClickListener() {
@@ -339,8 +384,8 @@ public class AllApps3D extends Activity {
                 ApplicationInfo app = (ApplicationInfo) parent
                         .getItemAtPosition(position);
 
-                if (mDataType == INDEX_DEFAULT) {
-                    mDataType = app.dataType;
+                if (mCurrentDataType == INDEX_DEFAULT) {
+                    mCurrentDataType = app.dataType;
                     loadApplications();
                     bindApplications();
                 } else {
@@ -349,21 +394,29 @@ public class AllApps3D extends Activity {
             }
         });
 
-        mGrid.setOnItemLongClickListener(new OnItemLongClickListener() {
+        if (mCurrentDataType == INDEX_DEFAULT) {
+            // the group selecting page, the item of the grid is a group
+            mGrid.setOnItemLongClickListener(null);
+            mGrid.setNumColumns(4);
+        } else {
+            // the group inner page, the item of the grid is an apk
+            mGrid.setOnItemLongClickListener(new OnItemLongClickListener() {
 
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view,
-                    int position, long id) {
-                // TODO Auto-generated method stub
-                ApplicationInfo app = (ApplicationInfo) parent
-                        .getItemAtPosition(position);
-                if (app.dataType == INDEX_APK) {
-                    showAppAddedDlg(app);
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent,
+                        View view, int position, long id) {
+                    // TODO Auto-generated method stub
+                    ApplicationInfo app = (ApplicationInfo) parent
+                            .getItemAtPosition(position);
+                    if (app.dataType == INDEX_APK) {
+                        showAppAddedDlg(app);
+                    }
+                    return true;
                 }
-                return true;
-            }
 
-        });
+            });
+            mGrid.setNumColumns(6);
+        }
     }
 
     public class AppReceiver extends BroadcastReceiver {
@@ -371,7 +424,11 @@ public class AllApps3D extends Activity {
         public void onReceive(Context context, Intent intent) {
             // TODO Auto-generated method stub
             final String action = intent.getAction();
-            logd("[onReceive] action : " + action);
+            logd("[onReceive] action : " + action + ", mCurrentDataType : " + mCurrentDataType);
+            if (mCurrentDataType != INDEX_APPS){
+                logd("[onReceive] mCurrentDataType is not APPS!");
+                return;
+            }
 
             if (Intent.ACTION_PACKAGE_CHANGED.equals(action)
                     || Intent.ACTION_PACKAGE_REMOVED.equals(action)

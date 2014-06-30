@@ -10,11 +10,12 @@ public class GroupUtils {
     private static final String TAG = "GroupUtils";
 
     public static void inserIntoGroupTable(Context context, int groupType,
-            String pkg) {
+            String pkg, String title) {
         ContentValues contentValues = new ContentValues();
         contentValues
                 .put(ExLauncherContentProvider.TABLE_GROUP_TYPE, groupType);
         contentValues.put(ExLauncherContentProvider.TABLE_GROUP_PACKAGE, pkg);
+        contentValues.put(ExLauncherContentProvider.TABLE_GROUP_TITLE, title);
 
         Uri insertUri = context.getContentResolver().insert(
                 ExLauncherContentProvider.URI_GROUP, contentValues);
@@ -31,7 +32,8 @@ public class GroupUtils {
             selectionArgs = new String[] { pkg };
         } else {
             selection = ExLauncherContentProvider.TABLE_GROUP_PACKAGE + "=?"
-                    + " AND " + ExLauncherContentProvider.TABLE_GROUP_TYPE + "=?";
+                    + " AND " + ExLauncherContentProvider.TABLE_GROUP_TYPE
+                    + "=?";
             selectionArgs = new String[] { pkg, groupType + "" };
         }
 
@@ -51,7 +53,7 @@ public class GroupUtils {
         cursor = context.getContentResolver().query(
                 ExLauncherContentProvider.URI_GROUP,
                 ExLauncherContentProvider.PROJECTION_GROUP, selection,
-                selectionArgs, null);
+                selectionArgs, ExLauncherContentProvider.TABLE_GROUP_ORDER_ASC);
 
         logd("[getGroupDataByType] cursor : " + cursor + ", groupType : "
                 + groupType);

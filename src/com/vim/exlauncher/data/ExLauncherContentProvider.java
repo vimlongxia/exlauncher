@@ -37,15 +37,14 @@ public class ExLauncherContentProvider extends ContentProvider {
     public static final String TABLE_GROUP_ID = "_id";
     public static final String TABLE_GROUP_TYPE = "group_type";
     public static final String TABLE_GROUP_PACKAGE = "package";
-    public static final String TABLE_GROUP_ORDER_ASC = TABLE_GROUP_PACKAGE
+    public static final String TABLE_GROUP_TITLE = "title";
+    public static final String TABLE_GROUP_ORDER_ASC = TABLE_GROUP_TITLE
             + " ASC";
-    public static final String TABLE_GROUP_ORDER_DESC = TABLE_GROUP_PACKAGE
-            + " DESC";
 
     public static final Uri URI_GROUP = Uri.parse("content://" + AUTHORITY
             + "/" + TABLE_GROUP);
     public static final String[] PROJECTION_GROUP = new String[] {
-            TABLE_GROUP_TYPE, TABLE_GROUP_PACKAGE };
+            TABLE_GROUP_TYPE, TABLE_GROUP_PACKAGE, TABLE_GROUP_TITLE };
 
     private static final int URL_MSG_ALL = 1;
     private static final int URL_MSG_ID = 2;
@@ -69,6 +68,16 @@ public class ExLauncherContentProvider extends ContentProvider {
         // TODO Auto-generated method stub
         logd("[delete] url : " + url + ", where : " + where + ", whereArgs : "
                 + whereArgs);
+        if (whereArgs != null) {
+            StringBuilder sb = new StringBuilder();
+            for (String w : whereArgs) {
+                sb.append(w);
+                sb.append(", ");
+            }
+
+            logd("[delete] whereArgs : " + sb.toString());
+        }
+
         int count = 0;
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         int match = s_urlMatcher.match(url);
@@ -88,6 +97,9 @@ public class ExLauncherContentProvider extends ContentProvider {
             break;
         }
 
+        logd("[delete] has deleted " + count + " item(s).");
+
+        getContext().getContentResolver().notifyChange(url, null);
         return count;
     }
 
@@ -132,6 +144,8 @@ public class ExLauncherContentProvider extends ContentProvider {
         }
 
         logd("[insert] result : " + result);
+
+        getContext().getContentResolver().notifyChange(url, null);
         return result;
     }
 
@@ -148,6 +162,15 @@ public class ExLauncherContentProvider extends ContentProvider {
         // TODO Auto-generated method stub
         logd("[query] url : " + url + ", selection : " + selection
                 + ", selectionArgs : " + selectionArgs);
+        if (selectionArgs != null) {
+            StringBuilder sb = new StringBuilder();
+            for (String w : selectionArgs) {
+                sb.append(w);
+                sb.append(", ");
+            }
+
+            logd("[query] selectionArgs : " + sb.toString());
+        }
 
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
@@ -189,7 +212,39 @@ public class ExLauncherContentProvider extends ContentProvider {
         logd("[update] url : " + url + ", values : " + values
                 + ", selection : " + selection + ", selectionArgs : "
                 + selectionArgs);
-        return 0;
+        if (selectionArgs != null) {
+            StringBuilder sb = new StringBuilder();
+            for (String w : selectionArgs) {
+                sb.append(w);
+                sb.append(", ");
+            }
+
+            logd("[update] selectionArgs : " + sb.toString());
+        }
+
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        int match = s_urlMatcher.match(url);
+        int row =-1;
+        switch (match) {
+        case URL_MSG_ALL:
+        case URL_MSG_ID:
+            row = db.update(TABLE_MSG, values, selection, selectionArgs);
+            break;
+
+        case URL_GROUP_ALL:
+        case URL_GROUP_ID:
+            row = db.update(TABLE_GROUP, values, selection, selectionArgs);
+            break;
+
+        default:
+            logd("[update] this url : " + url + " does not match anything!");
+            break; 
+        }
+
+        logd("[update] has deleted " + row + " item(s).");
+
+        getContext().getContentResolver().notifyChange(url, null);
+        return row;
     }
 
     private void logd(String strs) {
@@ -223,7 +278,7 @@ public class ExLauncherContentProvider extends ContentProvider {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_GROUP + " ("
                     + TABLE_GROUP_ID + " INTEGER PRIMARY KEY,"
                     + TABLE_GROUP_TYPE + " INTEGER," + TABLE_GROUP_PACKAGE
-                    + " TEXT);");
+                    + " TEXT," + TABLE_GROUP_TITLE + " TEXT);");
         }
     }
 }
