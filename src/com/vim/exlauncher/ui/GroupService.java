@@ -57,7 +57,7 @@ public class GroupService extends Service {
                     logd("[onReceive] this pkg " + pkg
                             + " is contained in the preinstall list.");
                     int index = mMapPreinstallPkg.get(pkg);
-                    if (index == AllApps3D.INDEX_APPS){
+                    if (index == AllApps.INDEX_APPS){
                         logd("[onReceive] this apk does not belong to any type");
                         return;
                     }
@@ -229,28 +229,28 @@ public class GroupService extends Service {
         if ((preinstallPkgGames != null) && (preinstallPkgGames.length > 0)) {
             for (String pkg : preinstallPkgGames) {
                 mArrayListPreinstallPkg.add(pkg);
-                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_GAMES);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_GAMES);
             }
         }
 
         if ((preinstallPkgMusic != null) && (preinstallPkgMusic.length > 0)) {
             for (String pkg : preinstallPkgMusic) {
                 mArrayListPreinstallPkg.add(pkg);
-                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_MUSIC);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_MUSIC);
             }
         }
 
         if ((preinstallPkgMedia != null) && (preinstallPkgMedia.length > 0)) {
             for (String pkg : preinstallPkgMedia) {
                 mArrayListPreinstallPkg.add(pkg);
-                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_MEDIA);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_MEDIA);
             }
         }
 
         if ((preinstallPkgOther != null) && (preinstallPkgOther.length > 0)) {
             for (String pkg : preinstallPkgMedia) {
                 mArrayListPreinstallPkg.add(pkg);
-                mMapPreinstallPkg.put(pkg, AllApps3D.INDEX_APPS);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_APPS);
             }
         }
     }

@@ -44,7 +44,7 @@ public class GroupUtils {
         return row;
     }
 
-    public static Cursor getGroupDataByType(Context context, int groupType) {
+    public static Cursor getGroupDataByGroup(Context context, int groupType) {
         Cursor cursor = null;
 
         String selection = ExLauncherContentProvider.TABLE_GROUP_TYPE + "=?";

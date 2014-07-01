@@ -40,7 +40,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.AllApps3D"
+            android:name=".ui.AllGroupsActivity"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+        <activity
+            android:name=".ui.AllApps"
             android:launchMode="singleTask" />
         <activity
             android:name=".ui.GamesActivity"
@@ -50,8 +54,8 @@
             android:name=".data.ExLauncherContentProvider"
             android:authorities="com.vim.exlauncher"
             android:exported="false" />
-        
-        <service android:name=".ui.GroupService"/>
+
+        <service android:name=".ui.GroupService" />
     </application>
 
 </manifest>

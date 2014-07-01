@@ -48,7 +48,7 @@ public class ImageButtonOnClickListener implements OnClickListener {
         switch (v.getId()) {
         case R.id.ib_apps:
             intent.setComponent(new ComponentName("com.vim.exlauncher",
-                    "com.vim.exlauncher.ui.AllApps3D"));
+                    "com.vim.exlauncher.ui.AllGroupsActivity"));
             break;
 
         case R.id.ib_drama:
@@ -58,8 +58,8 @@ public class ImageButtonOnClickListener implements OnClickListener {
 
         case R.id.ib_games:
             intent.setComponent(new ComponentName("com.vim.exlauncher",
-                    "com.vim.exlauncher.ui.AllApps3D"));
-            intent.putExtra(AllApps3D.DATA_TYPE, AllApps3D.INDEX_GAMES);
+                    "com.vim.exlauncher.ui.AllApps"));
+            intent.putExtra(AllApps.DATA_TYPE, AllApps.INDEX_GAMES);
             break;
 
         case R.id.ib_movies:

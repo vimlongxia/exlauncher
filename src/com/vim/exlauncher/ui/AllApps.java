@@ -36,7 +36,7 @@ import com.vim.exlauncher.data.ApplicationsAdapter;
 import com.vim.exlauncher.data.ExLauncherContentProvider;
 import com.vim.exlauncher.data.GroupUtils;
 
-public class AllApps3D extends Activity {
+public class AllApps extends Activity {
     private static final String TAG = "AllApps3D";
 
     private GridView mGrid;
@@ -265,7 +265,7 @@ public class AllApps3D extends Activity {
     }
 
     private void getPkgListByType() {
-        Cursor cursor = GroupUtils.getGroupDataByType(this, mCurrentDataType);
+        Cursor cursor = GroupUtils.getGroupDataByGroup(this, mCurrentDataType);
         if ((cursor == null) || (cursor.getCount() == 0)) {
             logd("[getPkgListByType] we don't get any date of this type : "
                     + mCurrentDataType);
@@ -300,7 +300,7 @@ public class AllApps3D extends Activity {
     }
 
     private void addPkgToDb(int groupType, String pkg, String title) {
-        if (groupType == AllApps3D.INDEX_APPS) {
+        if (groupType == AllApps.INDEX_APPS) {
             return;
         }
 
@@ -327,7 +327,7 @@ public class AllApps3D extends Activity {
                             // TODO Auto-generated method stub
                             logd("[onClick] whichButton : " + whichButton
                                     + ", pkg : " + app.pkg);
-                            GroupUtils.deleteByPkgAndType(AllApps3D.this,
+                            GroupUtils.deleteByPkgAndType(AllApps.this,
                                     app.pkg, mCurrentDataType);
                             loadApplications();
                             bindApplications();

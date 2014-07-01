@@ -14,11 +14,12 @@
     <string name="tv_name_hint">FITV</string>
     <string name="latest_hits">LATEST HITS</string>
     <string name="msg_read">Read></string>
-    <string name="str_home">Home</string>
     <string name="str_local">Local</string>
     <string name="str_apps">Apps</string>
-    <string name="str_browser">Browser</string>
-    <string name="str_setting">Setting</string>
+    <string name="str_video">Online Video </string>
+    <string name="str_recommend">My recommend</string>
+    <string name="str_music">Music</string>
+    <string name="str_add">Add</string>
     <string name="no_msg">No Message</string>
     <string name="new_version_prefix">New version </string>
     <string name="new_version_postfix"> has checked,\nclick here to update system.</string>
@@ -31,4 +32,5 @@
     <string name="app_not_found">Application Not Found!</string>
     <string name="click_list_item_to_read">Click the list item to read</string>
     <string name="box_lock">Your Box has been Locked due to </string>
+
 </resources>
