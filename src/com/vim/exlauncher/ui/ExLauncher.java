@@ -127,8 +127,6 @@ public class ExLauncher extends Activity {
     private Toast mToast;
     public static Context mContext;
     private ArrayList<Integer> mBottomButtonIdList;
-    private Animation mFocusAnimation;
-    private Animation mUnfocusAnimation;
 
     private static final String SAVED_ETH_MAC = "ubootenv.var.ethmac";
     private static final String SAVED_WIFI_MAC = "ubootenv.var.wifimac";
@@ -1471,12 +1469,6 @@ public class ExLauncher extends Activity {
     }
 
     private void initRes() {
-        mFocusAnimation = (AnimationSet) AnimationUtils.loadAnimation(this,
-                R.anim.anim_focus);
-
-        mUnfocusAnimation = (AnimationSet) AnimationUtils.loadAnimation(this,
-                R.anim.anim_unfocus);
-
         mRlMain = (RelativeLayout) findViewById(R.id.rl_main);
         mRlLock = (RelativeLayout) findViewById(R.id.rl_lock);
         mTvLock = (TextView) findViewById(R.id.tv_lock);
@@ -1498,15 +1490,8 @@ public class ExLauncher extends Activity {
             }
         };
 
-        mBottomButtonOnFocusChangeListener = new OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                Log.d(TAG, "[mBottomButtonOnFocusChangeListener] view : "
-                        + view + ", hasFocus : " + hasFocus);
-                view.startAnimation(hasFocus ? mFocusAnimation
-                        : mUnfocusAnimation);
-            }
-        };
+        mBottomButtonOnFocusChangeListener = new ScaleAnimOnFocusChangeListener(
+                this);
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
         mBtnOtaUpdateInfo = (Button) findViewById(R.id.btn_ota_update_info);

@@ -3,7 +3,6 @@ package com.vim.exlauncher.ui;
 import java.util.List;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,10 +16,10 @@ import com.vim.exlauncher.data.ApkInfo;
 public class GroupGridLayout extends GridLayout {
     private final static String TAG = "GroupGridLayout";
     private Context mContext;
-    private final String strCameraApp = "com.android.camera.CameraLauncher";
 
     public GroupGridLayout(Context context) {
         super(context);
+        mContext = context;
     }
 
     public GroupGridLayout(Context context, AttributeSet attrs) {
@@ -30,11 +29,7 @@ public class GroupGridLayout extends GridLayout {
 
     public GroupGridLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-    }
-
-    @Override
-    public void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+        mContext = context;
     }
 
     private void addTheAddImg() {
@@ -65,17 +60,19 @@ public class GroupGridLayout extends GridLayout {
             imgBg.setBackgroundResource(parseItemBackground(index));
             imgBg.setImageDrawable(apkInfo.getIcon());
 
-             apkItem.setOnKeyListener(new GridItemOnKeyListener(mContext, apkInfo.getIntent(), AllGroupsActivity.mFlipper));
-//             apkItem.setOnTouchListener(new MyOnTouchListener());
+            apkItem.setOnKeyListener(new GridItemOnKeyListener(mContext,
+                    apkInfo.getIntent(), AllGroupsActivity.mFlipper));
+            apkItem.setOnTouchListener(new GridItemOnTouchListener(mContext,
+                    apkInfo.getIntent(), AllGroupsActivity.mFlipper));
+            // apkItem.setOnFocusChangeListener(new
+            // ScaleAnimOnFocusChangeListener(
+            // mContext));
 
-            apkItem.setFocusable(true);
-            apkItem.setFocusableInTouchMode(true);
-            apkItem.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
             this.addView(apkItem);
         }
 
-        if (this.getId() != R.id.gv_shortcut_app)
-            addTheAddImg();
+//        if (this.getId() != R.id.gv_shortcut_app)
+//            addTheAddImg();
     }
 
     private int parseItemBackground(int num) {

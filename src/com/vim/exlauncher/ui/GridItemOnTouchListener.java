@@ -5,6 +5,7 @@ import com.vim.exlauncher.R;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -14,7 +15,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.ViewFlipper;
 
-public class GroupOnTouchListener implements OnTouchListener {
+public class GridItemOnTouchListener implements OnTouchListener {
     private final static String TAG = "GroupOnTouchListener";
 
     private Context mContext;
@@ -26,7 +27,7 @@ public class GroupOnTouchListener implements OnTouchListener {
     private Animation mAnimRightIn;
     private Animation mAnimRightOut;
 
-    public GroupOnTouchListener(Context context, Intent intent,
+    public GridItemOnTouchListener(Context context, Intent intent,
             ViewFlipper viewFlipper) {
         mContext = context;
         mIntent = intent;
@@ -44,6 +45,8 @@ public class GroupOnTouchListener implements OnTouchListener {
 
     public boolean onTouch(View view, MotionEvent event) {
         // TODO Auto-generated method stub
+        logd("[onTouch] view : " + view + ", event action : " + event.getAction());
+
         if (event.getAction() == MotionEvent.ACTION_UP) {
             mContext.startActivity(mIntent);
         } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -59,5 +62,13 @@ public class GroupOnTouchListener implements OnTouchListener {
         }
 
         return false;
+    }
+    
+    private static void logd(String strs) {
+        Log.d(TAG, strs);
+    }
+
+    private static void loge(String strs) {
+        Log.e(TAG, strs);
     }
 }

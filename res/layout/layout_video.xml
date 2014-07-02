@@ -44,6 +44,7 @@
         android:layout_marginTop="116dp"
         android:descendantFocusability="afterDescendants" >
 
+        <!-- 
         <com.vim.exlauncher.ui.GroupGridLayout
             android:id="@+id/gv_shortcut_video"
             android:layout_width="wrap_content"
@@ -51,6 +52,12 @@
             android:columnCount="6"
             android:orientation="horizontal"
             android:rowCount="20" />
+        -->
+        <com.vim.exlauncher.ui.GroupGridView
+            android:id="@+id/gv_video"
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:numColumns="6" />
     </ScrollView>
 
     <ImageView

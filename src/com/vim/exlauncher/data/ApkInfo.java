@@ -9,9 +9,18 @@ public class ApkInfo {
     private Intent mIntent;
     private Drawable mIcon;
     private ComponentName mComponentName;
+    private String mPkg;
 
     public ApkInfo() {
 
+    }
+
+    public ApkInfo(ApkInfo apkInfo) {
+        mTitle = apkInfo.getTitle();
+        mIntent = apkInfo.getIntent();
+        mIcon = apkInfo.getIcon();
+        mComponentName = apkInfo.getComponentName();
+        mPkg = apkInfo.getPkg();
     }
 
     public ApkInfo(String title, Intent intent, Drawable icon,
@@ -38,6 +47,10 @@ public class ApkInfo {
         mComponentName = componentName;
     }
 
+    public void setPkg(String pkg) {
+        mPkg = pkg;
+    }
+
     public String getTitle() {
         return mTitle;
     }
@@ -52,5 +65,9 @@ public class ApkInfo {
 
     public ComponentName getComponentName() {
         return mComponentName;
+    }
+
+    public String getPkg() {
+        return mPkg;
     }
 }

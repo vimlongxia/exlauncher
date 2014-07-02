@@ -34,6 +34,8 @@ public class GroupService extends Service {
     private Drawable mApkIcon;
     private CharSequence mApkTitle;
 
+    public static final boolean OLD_STYLE_APPS = false;
+
     private final BroadcastReceiver mAppReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -48,7 +50,7 @@ public class GroupService extends Service {
             }
 
             if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
-                if (!isLauncher(pkg)){
+                if (!isLauncher(pkg)) {
                     logd("[onReceive] this pkg " + pkg + " is not a app.");
                     return;
                 }
@@ -57,7 +59,7 @@ public class GroupService extends Service {
                     logd("[onReceive] this pkg " + pkg
                             + " is contained in the preinstall list.");
                     int index = mMapPreinstallPkg.get(pkg);
-                    if (index == AllApps.INDEX_APPS){
+                    if (index == AllApps.INDEX_APPS) {
                         logd("[onReceive] this apk does not belong to any type");
                         return;
                     }
@@ -65,8 +67,10 @@ public class GroupService extends Service {
                     getPkgTitleAndIcon(pkg);
                     addPkgToDb(index, pkg);
                 } else {
-                    mArrayListPendingPkg.add(pkg);
-                    showAppAddedDlg(pkg);
+                    if (OLD_STYLE_APPS) {
+                        mArrayListPendingPkg.add(pkg);
+                        showAppAddedDlg(pkg);
+                    }
                 }
             } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
                 processAppRemoved(pkg);
@@ -103,7 +107,7 @@ public class GroupService extends Service {
         }
     }
 
-    private boolean isLauncher(String pkg){
+    private boolean isLauncher(String pkg) {
         boolean ret = false;
         PackageManager manager = getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
@@ -120,8 +124,7 @@ public class GroupService extends Service {
         for (int i = 0; i < apps.size(); i++) {
             ResolveInfo info = apps.get(i);
 
-            if (info.activityInfo.applicationInfo.packageName
-                    .contains(pkg)) {
+            if (info.activityInfo.applicationInfo.packageName.contains(pkg)) {
                 logd("[isLauncher] match! this pkg " + pkg + " is a app.");
                 return true;
             }

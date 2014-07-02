@@ -65,8 +65,10 @@ public class GridItemOnKeyListener implements OnKeyListener {
 
     private boolean isNextItemNull(View view, int dec) {
         ViewGroup gridLayout = (ViewGroup) view.getParent();
-        if (FocusFinder.getInstance().findNextFocus(gridLayout,
-                gridLayout.findFocus(), dec) == null) {
+        View nextView = FocusFinder.getInstance().findNextFocus(gridLayout,
+                gridLayout.findFocus(), dec);
+        logd("[isNextItemNull] view : " + view + ", nextView : " + nextView + ", dec : " + dec);
+        if (nextView == null) {
             AllGroupsActivity.sBoundaryCount++;
         } else {
             AllGroupsActivity.sBoundaryCount = 0;
@@ -86,22 +88,22 @@ public class GridItemOnKeyListener implements OnKeyListener {
             if (mIntent != null) {
                 mContext.startActivity(mIntent);
             }
-            break;
+            return true;
 
         case KeyEvent.KEYCODE_DPAD_LEFT:
             processLeftKey(view);
-            break;
+            return true;
 
         case KeyEvent.KEYCODE_DPAD_RIGHT:
             processRightKey(view);
-            break;
+            return true;
 
         default:
             logd("[onKey] this keyCode has been discarded");
             break;
         }
 
-        return true;
+        return view.onKeyDown(keyCode, event);
     }
 
     private static void logd(String strs) {

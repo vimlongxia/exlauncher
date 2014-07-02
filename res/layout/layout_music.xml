@@ -45,6 +45,7 @@
         android:layout_marginTop="116dp"
         android:descendantFocusability="afterDescendants" >
 
+        <!-- 
         <com.vim.exlauncher.ui.GroupGridLayout
             android:id="@+id/gv_shortcut_music"
             android:layout_width="wrap_content"
@@ -53,6 +54,12 @@
             android:descendantFocusability="afterDescendants"
             android:orientation="horizontal"
             android:rowCount="20" />
+        -->
+        <com.vim.exlauncher.ui.GroupGridView
+            android:id="@+id/gv_music"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:numColumns="6" />        
     </ScrollView>
 
     <ImageView
