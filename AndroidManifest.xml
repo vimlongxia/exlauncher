@@ -46,7 +46,7 @@
         <activity
             android:name=".ui.CustomActivity"
             android:launchMode="singleTask"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.Translucent" />
         <activity
             android:name=".ui.AllApps"
             android:launchMode="singleTask" />

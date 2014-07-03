@@ -45,6 +45,13 @@ public class GridViewOnKeyListener implements OnKeyListener {
             mFlipper.setOutAnimation(mAnimLeftOut);
             mFlipper.showPrevious();
 
+            if (AllGroupsActivity.getCurGridPage() == AllApps.INDEX_VIDEO) {
+                AllGroupsActivity.setCurGridPage(AllApps.INDEX_LOCAL);
+            } else {
+                AllGroupsActivity.setCurGridPage(AllGroupsActivity
+                        .getCurGridPage() - 1);
+            }
+
             ret = true;
         }
 
@@ -61,6 +68,13 @@ public class GridViewOnKeyListener implements OnKeyListener {
             mFlipper.setInAnimation(mAnimRightIn);
             mFlipper.setOutAnimation(mAnimRightOut);
             mFlipper.showNext();
+
+            if (AllGroupsActivity.getCurGridPage() == AllApps.INDEX_LOCAL) {
+                AllGroupsActivity.setCurGridPage(AllApps.INDEX_VIDEO);
+            } else {
+                AllGroupsActivity.setCurGridPage(AllGroupsActivity
+                        .getCurGridPage() + 1);
+            }
 
             ret = true;
         }

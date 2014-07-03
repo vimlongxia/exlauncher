@@ -66,6 +66,7 @@
         android:gravity="center"
         android:horizontalSpacing="5dp"
         android:numColumns="6"
+        android:layout_centerHorizontal="true"
         android:stretchMode="columnWidth" />
 
     <ImageView

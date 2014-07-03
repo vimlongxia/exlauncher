@@ -8,11 +8,11 @@ import java.util.List;
 import android.R.integer;
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -21,7 +21,6 @@ import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.RelativeLayout;
@@ -29,7 +28,6 @@ import android.widget.ViewFlipper;
 
 import com.vim.exlauncher.R;
 import com.vim.exlauncher.data.ApkInfo;
-import com.vim.exlauncher.data.ApplicationInfo;
 import com.vim.exlauncher.data.ExLauncherContentProvider;
 import com.vim.exlauncher.data.GroupUtils;
 
@@ -73,12 +71,18 @@ public class AllGroupsActivity extends Activity {
     private final List<String> mListGroupGamesFromDb = new ArrayList<String>();
     private final List<String> mListGroupMusicFromDb = new ArrayList<String>();
     private final List<String> mListGroupLocalFromDb = new ArrayList<String>();
-    private final SparseArray<List<String>> mSparseArrayGroupFromDb = new SparseArray<List<String>>();
+    public static final SparseArray<List<String>> mSparseArrayGroupFromDb = new SparseArray<List<String>>();
 
     public static int sBoundaryCount;
     public static final Object BoundaryObj = new Object();
 
+    private static final int SCREEN_HEIGHT = 719;
+    private static final int CONTENT_HEIGHT = 300;
+    public static Bitmap sScreenShot;
+    public static Bitmap sScreenShotKeep;
+
     private static int sCurGridFocusIndex;
+    private static int sCurGridPage;
 
     static {
         sBoundaryCount = 0;
@@ -131,10 +135,20 @@ public class AllGroupsActivity extends Activity {
         if (getIntent().getBooleanExtra(START_TO_GAME, false)) {
             mFlipper.setDisplayedChild(AllApps.INDEX_GAMES);
             mFlipper.getChildAt(AllApps.INDEX_GAMES).requestFocus();
+            setCurGridPage(AllApps.INDEX_GAMES);
         } else {
             mFlipper.setDisplayedChild(AllApps.INDEX_APPS);
             mFlipper.getChildAt(AllApps.INDEX_APPS).requestFocus();
+            setCurGridPage(AllApps.INDEX_APPS);
         }
+    }
+
+    public static void setCurGridPage(int page) {
+        sCurGridPage = page;
+    }
+
+    public static int getCurGridPage() {
+        return sCurGridPage;
     }
 
     private void initHashMapGroup() {
@@ -248,6 +262,35 @@ public class AllGroupsActivity extends Activity {
         }
     }
 
+    private void setPopWindow(int top, int bottom) {
+        View view = this.getWindow().getDecorView();
+        view.layout(0, 0, 1279, SCREEN_HEIGHT);
+        view.setDrawingCacheEnabled(true);
+        Bitmap bmp = Bitmap.createBitmap(view.getDrawingCache());
+        view.destroyDrawingCache();
+
+        if (bottom > SCREEN_HEIGHT / 2) {
+            if (top + 3 - CONTENT_HEIGHT > 0) {
+                logd("[setPopWindow] 1");
+                sScreenShot = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(),
+                        top);
+                sScreenShotKeep = Bitmap.createBitmap(bmp, 0, CONTENT_HEIGHT,
+                        bmp.getWidth(), top + 3 - CONTENT_HEIGHT);
+            } else {
+                logd("[setPopWindow] 2");
+                sScreenShot = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(),
+                        CONTENT_HEIGHT);
+                sScreenShotKeep = null;
+            }
+        } else {
+            logd("[setPopWindow] 3");
+            sScreenShot = Bitmap.createBitmap(bmp, 0, bottom, bmp.getWidth(),
+                    SCREEN_HEIGHT - bottom);
+            sScreenShotKeep = Bitmap.createBitmap(bmp, 0, bottom,
+                    bmp.getWidth(), SCREEN_HEIGHT - (bottom + CONTENT_HEIGHT));
+        }
+    }
+
     private void setAllLayoutView() {
         // for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
         // mSparseArrayGroupGridLayout.get(i).setLayoutView(
@@ -308,10 +351,22 @@ public class AllGroupsActivity extends Activity {
             });
         }
     }
-    
-    private void startCustomAct(View view){
+
+    private void startCustomAct(View view) {
         Rect rect = new Rect();
         view.getGlobalVisibleRect(rect);
+
+        setPopWindow(rect.top - 10, rect.bottom + 10);
+
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.putExtra(CustomActivity.STR_TOP, rect.top - 10);
+        intent.putExtra(CustomActivity.STR_BOTTOM, rect.bottom + 10);
+        intent.putExtra(CustomActivity.STR_LEFT, rect.left);
+        intent.putExtra(CustomActivity.STR_RIGHT, rect.right);
+        intent.setComponent(new ComponentName("com.vim.exlauncher",
+                "com.vim.exlauncher.ui.CustomActivity"));
+        intent.putExtra(CustomActivity.GROUP_TYPE, getCurGridPage());
+        startActivity(intent);
     }
 
     @Override
@@ -327,12 +382,12 @@ public class AllGroupsActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        reLoadAllData();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        reLoadAllData();
     }
 
     private void loadAllApps() {
@@ -381,12 +436,12 @@ public class AllGroupsActivity extends Activity {
 
             apkInfo.setIsSelected(false);
             apkInfo.setBg(getResources().getDrawable(parseItemBackground(i)));
-            
+
             logd("[loadAllApps] apk title : " + apkInfo.getTitle());
             sListAllApps.add(apkInfo);
         }
     }
-    
+
     private Drawable parseItemIcon(String packageName) {
         int resId = -1;
 
