@@ -23,11 +23,13 @@ import android.view.WindowManager;
 
 import com.vim.exlauncher.R;
 import com.vim.exlauncher.data.GroupUtils;
+import com.vim.exlauncher.data.GroupXMLPaser;
 
 public class GroupService extends Service {
     private static final String TAG = "GrouService";
     private ArrayList<String> mArrayListPendingPkg;
     private ArrayList<String> mArrayListPreinstallPkg;
+    private List<GroupXMLPaser.ApkDataInGroup> mArrayListPreinstallApk;
     private Map<String, Integer> mMapPreinstallPkg;
 
     private AlertDialog mPkgDlg;
@@ -206,7 +208,9 @@ public class GroupService extends Service {
 
         mArrayListPendingPkg = new ArrayList<String>();
 
-        initPreinstallList();
+        // initPreinstallList();
+        mArrayListPreinstallApk = GroupXMLPaser.parse(this,
+                R.xml.preinstall_group_pkg);
 
         // Register intent receivers
         IntentFilter filter = new IntentFilter();
@@ -224,8 +228,10 @@ public class GroupService extends Service {
                 R.array.preinstall_pkg_games);
         String[] preinstallPkgMusic = this.getResources().getStringArray(
                 R.array.preinstall_pkg_music);
-        String[] preinstallPkgMedia = this.getResources().getStringArray(
-                R.array.preinstall_pkg_media);
+        String[] preinstallPkgVideo = this.getResources().getStringArray(
+                R.array.preinstall_pkg_video);
+        String[] preinstallPkgLocal = this.getResources().getStringArray(
+                R.array.preinstall_pkg_local);
         String[] preinstallPkgOther = this.getResources().getStringArray(
                 R.array.preinstall_pkg_other);
 
@@ -243,15 +249,22 @@ public class GroupService extends Service {
             }
         }
 
-        if ((preinstallPkgMedia != null) && (preinstallPkgMedia.length > 0)) {
-            for (String pkg : preinstallPkgMedia) {
+        if ((preinstallPkgVideo != null) && (preinstallPkgVideo.length > 0)) {
+            for (String pkg : preinstallPkgVideo) {
                 mArrayListPreinstallPkg.add(pkg);
-                mMapPreinstallPkg.put(pkg, AllApps.INDEX_MEDIA);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_VIDEO);
+            }
+        }
+
+        if ((preinstallPkgLocal != null) && (preinstallPkgLocal.length > 0)) {
+            for (String pkg : preinstallPkgLocal) {
+                mArrayListPreinstallPkg.add(pkg);
+                mMapPreinstallPkg.put(pkg, AllApps.INDEX_LOCAL);
             }
         }
 
         if ((preinstallPkgOther != null) && (preinstallPkgOther.length > 0)) {
-            for (String pkg : preinstallPkgMedia) {
+            for (String pkg : preinstallPkgOther) {
                 mArrayListPreinstallPkg.add(pkg);
                 mMapPreinstallPkg.put(pkg, AllApps.INDEX_APPS);
             }

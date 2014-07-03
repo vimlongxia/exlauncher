@@ -1,5 +1,7 @@
 package com.vim.exlauncher.data;
 
+import java.util.List;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -11,6 +13,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.util.Log;
+
+import com.vim.exlauncher.R;
 
 public class ExLauncherContentProvider extends ContentProvider {
     private static final String TAG = "ExLauncherContentProvider";
@@ -153,6 +157,7 @@ public class ExLauncherContentProvider extends ContentProvider {
     public boolean onCreate() {
         // TODO Auto-generated method stub
         mOpenHelper = new DatabaseHelper(getContext());
+        initDatabase();
         return true;
     }
 
@@ -224,7 +229,7 @@ public class ExLauncherContentProvider extends ContentProvider {
 
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         int match = s_urlMatcher.match(url);
-        int row =-1;
+        int row = -1;
         switch (match) {
         case URL_MSG_ALL:
         case URL_MSG_ID:
@@ -238,7 +243,7 @@ public class ExLauncherContentProvider extends ContentProvider {
 
         default:
             logd("[update] this url : " + url + " does not match anything!");
-            break; 
+            break;
         }
 
         logd("[update] has deleted " + row + " item(s).");
@@ -279,6 +284,20 @@ public class ExLauncherContentProvider extends ContentProvider {
                     + TABLE_GROUP_ID + " INTEGER PRIMARY KEY,"
                     + TABLE_GROUP_TYPE + " INTEGER," + TABLE_GROUP_PACKAGE
                     + " TEXT," + TABLE_GROUP_TITLE + " TEXT);");
+        }
+    }
+
+    private void initDatabase() {
+        List<GroupXMLPaser.ApkDataInGroup> preinstallApksList = GroupXMLPaser
+                .parse(this.getContext(), R.xml.preinstall_group_pkg);
+        
+        for (int i=0; i<preinstallApksList.size(); i++){
+            GroupXMLPaser.ApkDataInGroup apkData = preinstallApksList.get(i);
+            ContentValues values = new ContentValues();
+            values.put(TABLE_GROUP_TYPE, apkData.getGroup());
+            values.put(TABLE_GROUP_PACKAGE, apkData.getPkg());
+            
+            mOpenHelper.getWritableDatabase().insert(TABLE_GROUP, null, values);
         }
     }
 }

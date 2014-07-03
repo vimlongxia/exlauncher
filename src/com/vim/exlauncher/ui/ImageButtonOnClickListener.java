@@ -58,8 +58,9 @@ public class ImageButtonOnClickListener implements OnClickListener {
 
         case R.id.ib_games:
             intent.setComponent(new ComponentName("com.vim.exlauncher",
-                    "com.vim.exlauncher.ui.AllApps"));
-            intent.putExtra(AllApps.DATA_TYPE, AllApps.INDEX_GAMES);
+                    "com.vim.exlauncher.ui.AllGroupsActivity"));
+            // intent.putExtra(AllApps.DATA_TYPE, AllApps.INDEX_GAMES);
+            intent.putExtra(AllGroupsActivity.START_TO_GAME, true);
             break;
 
         case R.id.ib_movies:

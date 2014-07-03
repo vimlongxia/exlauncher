@@ -8,8 +8,10 @@ public class ApkInfo {
     private String mTitle;
     private Intent mIntent;
     private Drawable mIcon;
+    private Drawable mBg;
     private ComponentName mComponentName;
     private String mPkg;
+    private boolean mIsSelected;
 
     public ApkInfo() {
 
@@ -18,17 +20,11 @@ public class ApkInfo {
     public ApkInfo(ApkInfo apkInfo) {
         mTitle = apkInfo.getTitle();
         mIntent = apkInfo.getIntent();
-        mIcon = apkInfo.getIcon();
         mComponentName = apkInfo.getComponentName();
         mPkg = apkInfo.getPkg();
-    }
-
-    public ApkInfo(String title, Intent intent, Drawable icon,
-            ComponentName componentName) {
-        mTitle = title;
-        mIntent = intent;
-        mIcon = icon;
-        mComponentName = componentName;
+        mIcon = apkInfo.getIcon();
+        mBg = apkInfo.getBg();
+        mIsSelected = apkInfo.getIsSelected();
     }
 
     public void setTitle(String title) {
@@ -69,5 +65,21 @@ public class ApkInfo {
 
     public String getPkg() {
         return mPkg;
+    }
+    
+    public void setIsSelected(boolean isSelected){
+        mIsSelected = isSelected;
+    }
+    
+    public boolean getIsSelected(){
+        return mIsSelected;
+    }
+    
+    public void setBg(Drawable bg){
+        mBg = bg;
+    }
+    
+    public Drawable getBg(){
+        return mBg;
     }
 }

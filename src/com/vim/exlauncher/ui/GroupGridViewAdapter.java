@@ -30,6 +30,7 @@ public class GroupGridViewAdapter extends BaseAdapter {
     private Animation mAnimUnFocus;
 
     private static final int ROW_NUMBER = 3;
+    public static final int COLUMN_NUMBER = 6;
 
     public GroupGridViewAdapter(Context context, List<ApkInfo> apkList) {
         mContext = context;
@@ -75,6 +76,10 @@ public class GroupGridViewAdapter extends BaseAdapter {
         convertView.setBackgroundResource(getItemBackground(position + 1));
         iv.setImageDrawable(mListApk.get(position).getIcon());
         tv.setText(mListApk.get(position).getTitle());
+        
+        if (position == 0) {
+            logd("mListApk.get(position).getTitle() : " + mListApk.get(position).getTitle());
+        }
 
         // if (position == AllGroupsActivity.getCurGridFocusIndex()) {
         // iv.setScaleType(ScaleType.CENTER_CROP);
@@ -84,8 +89,6 @@ public class GroupGridViewAdapter extends BaseAdapter {
         // } else {
         // iv.setScaleType(ScaleType.CENTER_INSIDE);
         // }
-
-//        AllGroupsActivity.setPreGridFocusIndex(position);
 
         int gvHeight = parent.getHeight();
         GridView.LayoutParams params = new GridView.LayoutParams(

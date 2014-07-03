@@ -2,33 +2,34 @@
 <resources>
 
     <string-array name="add_to_group_type">
+        <item>Add to Video Group</item>
         <item>Add to Games Group</item>
         <item>Add to Music Group</item>
-        <item>Add to Media Group</item>
+        <item>Add to Local Group</item>
     </string-array>
-
     <string-array name="remove_group_type">
         <item>Remove from this Group</item>
     </string-array>
-
     <string-array name="group_type">
-        <item>Apps</item>
+        <item>Video</item>
         <item>Games</item>
+        <item>Apps</item>
         <item>Music</item>
-        <item>Media</item>
+        <item>Local</item>
     </string-array>
-
+    <string-array name="preinstall_pkg_video">
+        <item>com.android.gallery3d</item>
+    </string-array>
     <string-array name="preinstall_pkg_games">
         <item>com.rovio.angrybirds</item>
         <item>com.rovio.angrybirdsrio</item>
     </string-array>
-
     <string-array name="preinstall_pkg_music">
+        <item>com.android.music</item>
     </string-array>
-
-    <string-array name="preinstall_pkg_media">
+    <string-array name="preinstall_pkg_local">
+        <item>com.android.browser</item>
     </string-array>
-
     <string-array name="preinstall_pkg_other">
         <item>com.dropbox.android</item>
         <item>com.facebook.katana</item>

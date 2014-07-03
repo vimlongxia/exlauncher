@@ -8,10 +8,13 @@ import java.util.List;
 import android.R.integer;
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
@@ -36,51 +39,45 @@ public class AllGroupsActivity extends Activity {
     public static ViewFlipper mFlipper;
 
     private RelativeLayout mRlGroupVideo;
-    private RelativeLayout mRlGroupRecommend;
+    private RelativeLayout mRlGroupGames;
     private RelativeLayout mRlGroupApp;
     private RelativeLayout mRlGroupMusic;
     private RelativeLayout mRlGroupLocal;
 
     private GroupGridLayout mGridLayoutGroupVideo;
-    private GroupGridLayout mGridLayoutGroupRecommend;
+    private GroupGridLayout mGridLayoutGroupGames;
     private GroupGridLayout mGridLayoutGroupApp;
     private GroupGridLayout mGridLayoutGroupMusic;
     private GroupGridLayout mGridLayoutGroupLocal;
     private SparseArray<GroupGridLayout> mSparseArrayGroupGridLayout = new SparseArray<GroupGridLayout>();
 
     private GroupGridView mGridViewGroupVideo;
-    private GroupGridView mGridViewGroupRecommend;
+    private GroupGridView mGridViewGroupGames;
     private GroupGridView mGridViewGroupApp;
     private GroupGridView mGridViewGroupMusic;
     private GroupGridView mGridViewGroupLocal;
     private SparseArray<GroupGridView> mSparseArrayGroupGridView = new SparseArray<GroupGridView>();
 
-    private static final int INDEX_VIDEO = 0;
-    private static final int INDEX_RECOMMEND = 1;
-    private static final int INDEX_APP = 2;
-    private static final int INDEX_MUSIC = 3;
-    private static final int INDEX_LOCAL = 4;
-    private static final int INDEX_MAX_SIZE = INDEX_LOCAL + 1;
+    public static final String START_TO_GAME = "start_to_game";
 
-    private final List<ApkInfo> mListAllApps = new ArrayList<ApkInfo>();
+    public static final List<ApkInfo> sListAllApps = new ArrayList<ApkInfo>();
 
     private final List<ApkInfo> mListGroupVideo = new ArrayList<ApkInfo>();
-    private final List<ApkInfo> mListGroupRecommend = new ArrayList<ApkInfo>();
+    private final List<ApkInfo> mListGroupGames = new ArrayList<ApkInfo>();
     private final List<ApkInfo> mListGroupApp = new ArrayList<ApkInfo>();
     private final List<ApkInfo> mListGroupMusic = new ArrayList<ApkInfo>();
     private final List<ApkInfo> mListGroupLocal = new ArrayList<ApkInfo>();
     private final SparseArray<List<ApkInfo>> mSparseArrayGroup = new SparseArray<List<ApkInfo>>();
 
     private final List<String> mListGroupVideoFromDb = new ArrayList<String>();
-    private final List<String> mListGroupRecommendFromDb = new ArrayList<String>();
+    private final List<String> mListGroupGamesFromDb = new ArrayList<String>();
     private final List<String> mListGroupMusicFromDb = new ArrayList<String>();
     private final List<String> mListGroupLocalFromDb = new ArrayList<String>();
     private final SparseArray<List<String>> mSparseArrayGroupFromDb = new SparseArray<List<String>>();
 
     public static int sBoundaryCount;
     public static final Object BoundaryObj = new Object();
-    
-    private static int sPreGridFocusIndex;
+
     private static int sCurGridFocusIndex;
 
     static {
@@ -96,7 +93,6 @@ public class AllGroupsActivity extends Activity {
         initHashMapGroup();
         initHashMapGroupFromDb();
 
-        sPreGridFocusIndex = -1;
         sCurGridFocusIndex = 0;
     }
 
@@ -104,15 +100,15 @@ public class AllGroupsActivity extends Activity {
         mFlipper = (ViewFlipper) findViewById(R.id.menu_flipper);
 
         mRlGroupVideo = (RelativeLayout) findViewById(R.id.menu_layout_video);
-        mRlGroupRecommend = (RelativeLayout) findViewById(R.id.menu_layout_recommend);
+        mRlGroupGames = (RelativeLayout) findViewById(R.id.menu_layout_games);
         mRlGroupApp = (RelativeLayout) findViewById(R.id.menu_layout_app);
         mRlGroupMusic = (RelativeLayout) findViewById(R.id.menu_layout_music);
         mRlGroupLocal = (RelativeLayout) findViewById(R.id.menu_layout_local);
 
         // mGridLayoutGroupVideo = (GroupGridLayout)
         // findViewById(R.id.gv_shortcut_video);
-        // mGridLayoutGroupRecommend = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_recommend);
+        // mGridLayoutGroupGames = (GroupGridLayout)
+        // findViewById(R.id.gv_shortcut_Games);
         // mGridLayoutGroupApp = (GroupGridLayout)
         // findViewById(R.id.gv_shortcut_app);
         // mGridLayoutGroupMusic = (GroupGridLayout)
@@ -121,56 +117,52 @@ public class AllGroupsActivity extends Activity {
         // findViewById(R.id.gv_shortcut_local);
 
         mGridViewGroupVideo = (GroupGridView) findViewById(R.id.gv_video);
-        mGridViewGroupRecommend = (GroupGridView) findViewById(R.id.gv_recommend);
+        mGridViewGroupGames = (GroupGridView) findViewById(R.id.gv_games);
         mGridViewGroupApp = (GroupGridView) findViewById(R.id.gv_app);
         mGridViewGroupMusic = (GroupGridView) findViewById(R.id.gv_music);
         mGridViewGroupLocal = (GroupGridView) findViewById(R.id.gv_local);
 
-        mSparseArrayGroupGridView.put(INDEX_APP, mGridViewGroupApp);
-        mSparseArrayGroupGridView.put(INDEX_LOCAL, mGridViewGroupLocal);
-        mSparseArrayGroupGridView.put(INDEX_MUSIC, mGridViewGroupMusic);
-        mSparseArrayGroupGridView.put(INDEX_RECOMMEND, mGridViewGroupRecommend);
-        mSparseArrayGroupGridView.put(INDEX_VIDEO, mGridViewGroupVideo);
+        mSparseArrayGroupGridView.put(AllApps.INDEX_APPS, mGridViewGroupApp);
+        mSparseArrayGroupGridView.put(AllApps.INDEX_LOCAL, mGridViewGroupLocal);
+        mSparseArrayGroupGridView.put(AllApps.INDEX_MUSIC, mGridViewGroupMusic);
+        mSparseArrayGroupGridView.put(AllApps.INDEX_GAMES, mGridViewGroupGames);
+        mSparseArrayGroupGridView.put(AllApps.INDEX_VIDEO, mGridViewGroupVideo);
 
-        mFlipper.setDisplayedChild(INDEX_APP);
-        mFlipper.getChildAt(INDEX_APP).requestFocus();
+        if (getIntent().getBooleanExtra(START_TO_GAME, false)) {
+            mFlipper.setDisplayedChild(AllApps.INDEX_GAMES);
+            mFlipper.getChildAt(AllApps.INDEX_GAMES).requestFocus();
+        } else {
+            mFlipper.setDisplayedChild(AllApps.INDEX_APPS);
+            mFlipper.getChildAt(AllApps.INDEX_APPS).requestFocus();
+        }
     }
 
     private void initHashMapGroup() {
-        mSparseArrayGroup.put(INDEX_VIDEO, mListGroupVideo);
-        mSparseArrayGroup.put(INDEX_RECOMMEND, mListGroupRecommend);
-        mSparseArrayGroup.put(INDEX_APP, mListGroupApp);
-        mSparseArrayGroup.put(INDEX_MUSIC, mListGroupMusic);
-        mSparseArrayGroup.put(INDEX_LOCAL, mListGroupLocal);
+        mSparseArrayGroup.put(AllApps.INDEX_VIDEO, mListGroupVideo);
+        mSparseArrayGroup.put(AllApps.INDEX_GAMES, mListGroupGames);
+        mSparseArrayGroup.put(AllApps.INDEX_APPS, mListGroupApp);
+        mSparseArrayGroup.put(AllApps.INDEX_MUSIC, mListGroupMusic);
+        mSparseArrayGroup.put(AllApps.INDEX_LOCAL, mListGroupLocal);
     }
 
     private void initHashMapGroupFromDb() {
-        mSparseArrayGroupFromDb.put(INDEX_VIDEO, mListGroupVideoFromDb);
-        mSparseArrayGroupFromDb.put(INDEX_RECOMMEND, mListGroupRecommendFromDb);
-        mSparseArrayGroupFromDb.put(INDEX_MUSIC, mListGroupMusicFromDb);
-        mSparseArrayGroupFromDb.put(INDEX_LOCAL, mListGroupLocalFromDb);
+        mSparseArrayGroupFromDb.put(AllApps.INDEX_VIDEO, mListGroupVideoFromDb);
+        mSparseArrayGroupFromDb.put(AllApps.INDEX_GAMES, mListGroupGamesFromDb);
+        mSparseArrayGroupFromDb.put(AllApps.INDEX_MUSIC, mListGroupMusicFromDb);
+        mSparseArrayGroupFromDb.put(AllApps.INDEX_LOCAL, mListGroupLocalFromDb);
     }
 
-    public static int getPreGridFocusIndex(){
-        logd("[getPreGridFocusIndex] sPreGridFocusIndex : " + sPreGridFocusIndex);
-        return sPreGridFocusIndex;
-    }
-    
-    public static void setPreGridFocusIndex(int index){
-        logd("[setPreGridFocusIndex] index : " + index);
-        sPreGridFocusIndex = index;
-    }
-    
-    public static int getCurGridFocusIndex(){
-        logd("[getCurGridFocusIndex] sCurGridFocusIndex : " + sCurGridFocusIndex);
+    public static int getCurGridFocusIndex() {
+        logd("[getCurGridFocusIndex] sCurGridFocusIndex : "
+                + sCurGridFocusIndex);
         return sCurGridFocusIndex;
     }
-    
-    public static void setCurGridFocusIndex(int index){
+
+    public static void setCurGridFocusIndex(int index) {
         logd("[setCurGridFocusIndex] index : " + index);
         sCurGridFocusIndex = index;
     }
-    
+
     private void loadAppInfoByGroup(int group) {
         List<String> apkInfoList = mSparseArrayGroupFromDb.get(group);
         apkInfoList.clear();
@@ -198,8 +190,8 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void loadAllCustomGroupAppsPkgFromDb() {
-        for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
-            if (i == INDEX_APP) {
+        for (int i = AllApps.INDEX_VIDEO; i < AllApps.INDEX_MAX_SIZE; i++) {
+            if (i == AllApps.INDEX_APPS) {
                 continue;
             }
 
@@ -214,19 +206,19 @@ public class AllGroupsActivity extends Activity {
 
         storedlist.clear();
 
-        if (mListAllApps.size() == 0) {
+        if (sListAllApps.size() == 0) {
             loge("[loadAppByGroupList] mListAllApps size 0! this should not happen!");
             return;
         }
 
         if (pkgList == null) {
             // this is apps list
-            storedlist.addAll(mListAllApps);
+            storedlist.addAll(sListAllApps);
         } else {
             // this is other groups
             ApkInfo allApkInfo = null;
-            for (int i = 0; i < mListAllApps.size(); i++) {
-                allApkInfo = mListAllApps.get(i);
+            for (int i = 0; i < sListAllApps.size(); i++) {
+                allApkInfo = sListAllApps.get(i);
 
                 if (pkgList.contains(allApkInfo.getPkg())) {
                     logd("[loadAppByGroupList] match ! pkg : "
@@ -235,12 +227,22 @@ public class AllGroupsActivity extends Activity {
                     storedlist.add(apkInfo);
                 }
             }
-        }
 
+            // add the last item "Add"
+            allApkInfo = new ApkInfo();
+            allApkInfo.setTitle(getString(R.string.str_add));
+
+            Intent intent = new Intent();
+            allApkInfo.setIntent(intent);
+
+            allApkInfo.setIcon(getResources().getDrawable(
+                    R.drawable.item_img_add));
+            storedlist.add(allApkInfo);
+        }
     }
 
     private void loadAllGroupApps() {
-        for (int i = INDEX_VIDEO; i < mSparseArrayGroup.size(); i++) {
+        for (int i = AllApps.INDEX_VIDEO; i < mSparseArrayGroup.size(); i++) {
             loadAppByGroupList(mSparseArrayGroup.get(i),
                     mSparseArrayGroupFromDb.get(i, null));
         }
@@ -252,8 +254,8 @@ public class AllGroupsActivity extends Activity {
         // mSparseArrayGroup.get(i));
         // }
 
-        for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
-            GroupGridView gv = mSparseArrayGroupGridView.get(i);
+        for (int i = AllApps.INDEX_VIDEO; i < AllApps.INDEX_MAX_SIZE; i++) {
+            final GroupGridView gv = mSparseArrayGroupGridView.get(i);
             final List<ApkInfo> listApk = mSparseArrayGroup.get(i);
             BaseAdapter adapter = new GroupGridViewAdapter(this, listApk);
             gv.setAdapter(adapter);
@@ -264,36 +266,52 @@ public class AllGroupsActivity extends Activity {
                     // TODO Auto-generated method stub
                     logd("[onItemClick] view : " + view + ", position : "
                             + position);
-                    AllGroupsActivity.this.startActivity(listApk.get(position)
-                            .getIntent());
+                    if (position == (listApk.size() - 1)) {
+                        startCustomAct(view);
+                    } else {
+                        AllGroupsActivity.this.startActivity(listApk.get(
+                                position).getIntent());
+                    }
                 }
             });
-//            gv.setOnKeyListener(new GridViewOnKeyListener(this, AllGroupsActivity.mFlipper));
+            gv.setOnKeyListener(new GridViewOnKeyListener(this,
+                    AllGroupsActivity.mFlipper));
             gv.setOnItemSelectedListener(new GridViewOnItemSelectedListener());
-            
-            gv.setOnFocusChangeListener(new View.OnFocusChangeListener() {  
-                @Override  
-                public void onFocusChange(View v, boolean hasFocus) {  
-                    if (!hasFocus) {  
-                        try {  
-                            @SuppressWarnings("unchecked")  
-                            Class<GridView> c = (Class<GridView>) Class  
-                                    .forName("android.widget.GridView");  
-                            Method[] flds = c.getDeclaredMethods();  
-                            for (Method f : flds) {  
-                                if ("setSelectionInt".equals(f.getName())) {  
-                                    f.setAccessible(true);  
-                                    f.invoke(v,  
-                                            new Object[] { Integer.valueOf(-1) });  
-                                }  
-                            }  
-                        } catch (Exception e) {  
-                            e.printStackTrace();  
-                        }  
-                    }  
-                }  
-            });  
+
+            gv.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    logd("[onFocusChange] v : " + v + ", hasFocus : "
+                            + hasFocus);
+                    if (!hasFocus) {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            Class<GridView> c = (Class<GridView>) Class
+                                    .forName("android.widget.GridView");
+                            Method[] flds = c.getDeclaredMethods();
+                            for (Method f : flds) {
+                                if ("setSelectionInt".equals(f.getName())) {
+                                    f.setAccessible(true);
+                                    f.invoke(
+                                            v,
+                                            new Object[] { Integer.valueOf(-1) });
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        gv.setSelection(0);
+                        sCurGridFocusIndex = 0;
+                    }
+                }
+            });
         }
+    }
+    
+    private void startCustomAct(View view){
+        Rect rect = new Rect();
+        view.getGlobalVisibleRect(rect);
     }
 
     @Override
@@ -318,7 +336,7 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void loadAllApps() {
-        mListAllApps.clear();
+        sListAllApps.clear();
 
         PackageManager manager = getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
@@ -333,26 +351,120 @@ public class AllGroupsActivity extends Activity {
             return;
         }
 
+        ApkInfo apkInfo = null;
         for (int i = 0; i < apps.size(); i++) {
-            ApplicationInfo application = new ApplicationInfo();
             ResolveInfo info = apps.get(i);
 
-            application.title = info.loadLabel(manager);
-            application.setActivity(new ComponentName(
-                    info.activityInfo.applicationInfo.packageName,
-                    info.activityInfo.name), Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-            application.icon = info.activityInfo.loadIcon(manager);
+            apkInfo = new ApkInfo();
+            apkInfo.setTitle(info.loadLabel(manager).toString());
 
-            ApkInfo apkInfo = new ApkInfo();
-            apkInfo.setTitle(application.title.toString());
-            apkInfo.setIntent(application.intent);
-            apkInfo.setIcon(application.icon);
-            apkInfo.setComponentName(application.componentName);
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+            ComponentName componentName = new ComponentName(
+                    info.activityInfo.applicationInfo.packageName,
+                    info.activityInfo.name);
+            intent.setComponent(componentName);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            apkInfo.setIntent(intent);
+
+            apkInfo.setComponentName(componentName);
             apkInfo.setPkg(info.activityInfo.applicationInfo.packageName);
 
+            Drawable icon = parseItemIcon(apkInfo.getPkg());
+            if (icon != null) {
+                apkInfo.setIcon(icon);
+            } else {
+                apkInfo.setIcon(info.activityInfo.loadIcon(manager));
+            }
+
+            apkInfo.setIsSelected(false);
+            apkInfo.setBg(getResources().getDrawable(parseItemBackground(i)));
+            
             logd("[loadAllApps] apk title : " + apkInfo.getTitle());
-            mListAllApps.add(apkInfo);
+            sListAllApps.add(apkInfo);
+        }
+    }
+    
+    private Drawable parseItemIcon(String packageName) {
+        int resId = -1;
+
+        if (packageName.equals("com.fb.FileBrower")) {
+            resId = R.drawable.icon_filebrowser;
+        } else if (packageName.equals("com.amlogic.OOBE")) {
+            resId = R.drawable.icon_oobe;
+        } else if (packageName.equals("com.android.browser")) {
+            resId = R.drawable.icon_browser;
+        } else if (packageName.equals("com.gsoft.appinstall")) {
+            resId = R.drawable.icon_appinstaller;
+        } else if (packageName.equals("com.farcore.videoplayer")) {
+            resId = R.drawable.icon_videoplayer;
+        } else if (packageName.equals("com.aml.settings")) {
+            resId = R.drawable.icon_amlsetting;
+        } else if (packageName.equals("com.amlogic.mediacenter")) {
+            resId = R.drawable.icon_mediacenter;
+        } else if (packageName.equals("com.amlapp.update.otaupgrade")) {
+            resId = R.drawable.icon_backupandupgrade;
+        } else if (packageName.equals("com.android.gallery3d")) {
+            resId = R.drawable.icon_pictureplayer;
+        } else if (packageName.equals("com.amlogic.netfilebrowser")) {
+            resId = R.drawable.icon_networkneiborhood;
+        } else if (packageName.equals("st.com.xiami")) {
+            resId = R.drawable.icon_xiami;
+        } else if (packageName.equals("com.android.providers.downloads.ui")) {
+            resId = R.drawable.icon_download;
+        } else if (packageName.equals("app.android.applicationxc")) {
+            resId = R.drawable.icon_xiaocong;
+        } else if (packageName.equals("com.example.airplay")) {
+            resId = R.drawable.icon_airplay;
+        } else if (packageName.equals("com.amlogic.miracast")) {
+            resId = R.drawable.icon_miracast;
+        } else if (packageName.equals("com.amlogic.PPPoE")) {
+            resId = R.drawable.icon_pppoe;
+        } else if (packageName.equals("com.android.service.remotecontrol")) {
+            resId = R.drawable.icon_remotecontrol;
+        } else if (packageName.equals("com.mbx.settingsmbox")) {
+            resId = R.drawable.icon_setting;
+        } else if (packageName.equals("com.android.music")) {
+            resId = R.drawable.icon_music;
+        } else {
+            return null;
+        }
+
+        return getResources().getDrawable(resId);
+    }
+
+    private int parseItemBackground(int num) {
+        switch (num % 13) {
+        case 0:
+            return R.drawable.item_1;
+        case 1:
+            return R.drawable.item_2;
+        case 2:
+            return R.drawable.item_3;
+        case 3:
+            return R.drawable.item_4;
+        case 4:
+            return R.drawable.item_5;
+        case 5:
+            return R.drawable.item_6;
+        case 6:
+            return R.drawable.item_7;
+        case 7:
+            return R.drawable.item_8;
+        case 8:
+            return R.drawable.item_9;
+        case 9:
+            return R.drawable.item_10;
+        case 10:
+            return R.drawable.item_11;
+        case 11:
+            return R.drawable.item_12;
+        case 12:
+            return R.drawable.item_13;
+        default:
+            return R.drawable.item_1;
         }
     }
 

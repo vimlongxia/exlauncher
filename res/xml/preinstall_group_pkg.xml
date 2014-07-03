@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preinstall_groups>
+
+    <apks
+        group="video"
+        pkg="com.android.email" />
+    <apks
+        group="games"
+        pkg="com.rovio.angrybirds" />
+    <apks
+        group="games"
+        pkg="com.rovio.angrybirdsrio" />
+    <apks
+        group="games"
+        pkg="com.android.mms" />
+    <apks
+        group="music"
+        pkg="com.android.music" />
+    <apks
+        group="local"
+        pkg="com.android.browser" />
+
+</preinstall_groups>

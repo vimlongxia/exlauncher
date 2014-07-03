@@ -59,11 +59,12 @@ public class AllApps extends Activity {
     private static final int INDEX_DEFAULT = -1;
 
     // the following groups means that we are in the corresponding sub page
-    public static final int INDEX_APPS = 0;
+    public static final int INDEX_VIDEO = 0;
     public static final int INDEX_GAMES = 1;
-    public static final int INDEX_MUSIC = 2;
-    public static final int INDEX_MEDIA = 3;
-    private static final int INDEX_SIZE = INDEX_MEDIA + 1;
+    public static final int INDEX_APPS = 2;
+    public static final int INDEX_MUSIC = 3;
+    public static final int INDEX_LOCAL = 4;
+    public static final int INDEX_MAX_SIZE = INDEX_LOCAL + 1;
 
     protected void onCreate(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
@@ -147,7 +148,7 @@ public class AllApps extends Activity {
         }
         mApplications.clear();
 
-        for (int i = 0; i < INDEX_SIZE; i++) {
+        for (int i = 0; i < INDEX_MAX_SIZE; i++) {
             ApplicationInfo application = new ApplicationInfo();
             application.title = mAllGroups[i];
 
@@ -170,10 +171,16 @@ public class AllApps extends Activity {
                 application.dataType = INDEX_MUSIC;
                 break;
 
-            case INDEX_MEDIA:
+            case INDEX_VIDEO:
                 application.icon = getResources().getDrawable(
                         R.drawable.ic_button_movie);
-                application.dataType = INDEX_MEDIA;
+                application.dataType = INDEX_VIDEO;
+                break;
+                
+            case INDEX_LOCAL:
+                application.icon = getResources().getDrawable(
+                        R.drawable.ic_button_movie);
+                application.dataType = INDEX_LOCAL;
                 break;
             }
 
@@ -318,7 +325,7 @@ public class AllApps extends Activity {
         builder.setTitle(app.title);
 
         if ((mCurrentDataType >= INDEX_GAMES)
-                && (mCurrentDataType <= INDEX_MEDIA)) {
+                && (mCurrentDataType <= INDEX_LOCAL)) {
             builder.setItems(R.array.remove_group_type,
                     new DialogInterface.OnClickListener() {
                         @Override

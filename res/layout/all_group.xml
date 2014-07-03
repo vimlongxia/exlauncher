@@ -8,7 +8,7 @@
 
     <include layout="@layout/layout_video" />
 
-    <include layout="@layout/layout_recommend" />
+    <include layout="@layout/layout_games" />
 
     <include layout="@layout/layout_app" />
 

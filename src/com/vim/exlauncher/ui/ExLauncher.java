@@ -1347,7 +1347,7 @@ public class ExLauncher extends Activity {
 
         mIbTv.requestFocus();
 
-        startService(new Intent(this, GroupService.class));
+        // startService(new Intent(this, GroupService.class));
 
         removeAllOldData();
 

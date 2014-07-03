@@ -16,8 +16,8 @@
     <string name="msg_read">Read></string>
     <string name="str_local">Local</string>
     <string name="str_apps">Apps</string>
-    <string name="str_video">Online Video </string>
-    <string name="str_recommend">My recommend</string>
+    <string name="str_video">Video </string>
+    <string name="str_games">My Games</string>
     <string name="str_music">Music</string>
     <string name="str_add">Add</string>
     <string name="no_msg">No Message</string>
