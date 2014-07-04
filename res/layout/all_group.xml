@@ -1,19 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ViewFlipper xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/menu_flipper"
+<AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg"
-    android:descendantFocusability="afterDescendants" >
+    android:layout_height="match_parent" >
 
-    <include layout="@layout/layout_video" />
+    <ViewFlipper
+        android:id="@+id/menu_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg"
+        android:descendantFocusability="afterDescendants" >
 
-    <include layout="@layout/layout_games" />
+        <include layout="@layout/layout_video" />
 
-    <include layout="@layout/layout_app" />
+        <include layout="@layout/layout_games" />
 
-    <include layout="@layout/layout_music" />
+        <include layout="@layout/layout_app" />
 
-    <include layout="@layout/layout_local" />
+        <include layout="@layout/layout_music" />
 
-</ViewFlipper>
+        <include layout="@layout/layout_local" />
+    </ViewFlipper>
+
+    <RelativeLayout
+        android:id="@+id/rl_focus_unit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" >
+
+        <ImageView
+            android:id="@+id/iv_focus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:contentDescription="@string/app_name" />
+
+        <TextView
+            android:id="@+id/tv_focus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/iv_focus"
+            android:layout_marginBottom="20dp"
+            android:layout_centerHorizontal="true"
+            android:ellipsize="marquee"
+            android:gravity="center"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textSize="25sp" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/iv_focus_bg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/app_name"
+        android:scaleType="fitCenter" />
+
+    <ImageView
+        android:id="@+id/iv_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/frame"
+        android:contentDescription="@string/app_name"
+        android:scaleType="fitCenter" />
+
+</AbsoluteLayout>

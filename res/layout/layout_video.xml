@@ -37,23 +37,21 @@
         android:textColor="#3495D9"
         android:textSize="18sp" />
 
-    <!--
     <ScrollView
+        android:id="@+id/sv_video"
         android:layout_width="976dp"
         android:layout_height="460dp"
         android:layout_marginLeft="170dp"
-        android:layout_marginTop="116dp"
-        android:descendantFocusability="afterDescendants" >
+        android:layout_marginTop="116dp" >
 
         <com.vim.exlauncher.ui.GroupGridLayout
             android:id="@+id/gv_shortcut_video"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:columnCount="6"
             android:orientation="horizontal"
             android:rowCount="20" />
     </ScrollView>
-    -->
 
     <com.vim.exlauncher.ui.GroupGridView
         android:id="@+id/gv_video"

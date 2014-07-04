@@ -69,11 +69,10 @@ public class GroupGridViewAdapter extends BaseAdapter {
                     false);
         }
 
-        RelativeLayout rl = (RelativeLayout) convertView.findViewById(R.id.rl);
         ImageView iv = (ImageView) convertView.findViewById(R.id.item_bg);
         TextView tv = (TextView) convertView.findViewById(R.id.item_name);
 
-        convertView.setBackgroundResource(getItemBackground(position + 1));
+        convertView.setBackgroundResource(AllGroupsActivity.getItemBackground(position + 1));
         iv.setImageDrawable(mListApk.get(position).getIcon());
         tv.setText(mListApk.get(position).getTitle());
         
@@ -100,29 +99,6 @@ public class GroupGridViewAdapter extends BaseAdapter {
         // mListApk.get(position).getIntent(), AllGroupsActivity.mFlipper));
 
         return convertView;
-    }
-
-    private int getItemBackground(int num) {
-        switch (num % 8 + 1) {
-        case 1:
-            return R.drawable.item_child_1;
-        case 2:
-            return R.drawable.item_child_2;
-        case 3:
-            return R.drawable.item_child_3;
-        case 4:
-            return R.drawable.item_child_4;
-        case 5:
-            return R.drawable.item_child_5;
-        case 6:
-            return R.drawable.item_child_6;
-        case 7:
-            return R.drawable.item_child_7;
-        case 8:
-            return R.drawable.item_child_8;
-        default:
-            return R.drawable.item_child_1;
-        }
     }
 
     private static void logd(String strs) {

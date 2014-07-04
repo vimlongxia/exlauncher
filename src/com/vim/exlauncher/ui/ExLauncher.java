@@ -188,6 +188,8 @@ public class ExLauncher extends Activity {
     private static final int GET_JSON_DELAY = 15 * 60 * 1000;
     private static final int GET_JSON_DELAY_FOR_NETRECEIVER = 2 * 1000;
 
+    public static final boolean S_GRID_LAYOUT = true;
+
     final class DataHandler extends Handler {
         public DataHandler(Looper looper) {
             super(looper);
@@ -1490,8 +1492,9 @@ public class ExLauncher extends Activity {
             }
         };
 
-        mBottomButtonOnFocusChangeListener = new ScaleAnimOnFocusChangeListener(
-                this);
+        // mBottomButtonOnFocusChangeListener = new
+        // ScaleAnimOnFocusChangeListener(
+        // this);
 
         mIvLogo = (ImageView) findViewById(R.id.iv_logo);
         mBtnOtaUpdateInfo = (Button) findViewById(R.id.btn_ota_update_info);

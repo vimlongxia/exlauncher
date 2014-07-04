@@ -8,6 +8,7 @@ import java.util.List;
 import android.R.integer;
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -23,7 +24,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.ViewFlipper;
 
 import com.vim.exlauncher.R;
@@ -36,11 +39,22 @@ public class AllGroupsActivity extends Activity {
 
     public static ViewFlipper mFlipper;
 
-    private RelativeLayout mRlGroupVideo;
-    private RelativeLayout mRlGroupGames;
-    private RelativeLayout mRlGroupApp;
-    private RelativeLayout mRlGroupMusic;
-    private RelativeLayout mRlGroupLocal;
+    public static RelativeLayout sRlFocusUnit;
+    public static ImageView sIvFocusBg;
+    public static ImageView sIvFrame;
+
+    // private RelativeLayout mRlGroupVideo;
+    // private RelativeLayout mRlGroupGames;
+    // private RelativeLayout mRlGroupApp;
+    // private RelativeLayout mRlGroupMusic;
+    // private RelativeLayout mRlGroupLocal;
+
+    private ScrollView mSvVideo;
+    private ScrollView mSvGames;
+    private ScrollView mSvApp;
+    private ScrollView mSvMusic;
+    private ScrollView mSvLocal;
+    private SparseArray<ScrollView> mSparseArrayGroupScrollView = new SparseArray<ScrollView>();
 
     private GroupGridLayout mGridLayoutGroupVideo;
     private GroupGridLayout mGridLayoutGroupGames;
@@ -58,6 +72,14 @@ public class AllGroupsActivity extends Activity {
 
     public static final String START_TO_GAME = "start_to_game";
 
+    // the following groups means that we are in the corresponding sub page
+    private static final int INDEX_VIDEO = 0;
+    private static final int INDEX_GAMES = 1;
+    private static final int INDEX_APPS = 2;
+    private static final int INDEX_MUSIC = 3;
+    private static final int INDEX_LOCAL = 4;
+    private static final int INDEX_MAX_SIZE = INDEX_LOCAL + 1;
+
     public static final List<ApkInfo> sListAllApps = new ArrayList<ApkInfo>();
 
     private final List<ApkInfo> mListGroupVideo = new ArrayList<ApkInfo>();
@@ -65,7 +87,7 @@ public class AllGroupsActivity extends Activity {
     private final List<ApkInfo> mListGroupApp = new ArrayList<ApkInfo>();
     private final List<ApkInfo> mListGroupMusic = new ArrayList<ApkInfo>();
     private final List<ApkInfo> mListGroupLocal = new ArrayList<ApkInfo>();
-    private final SparseArray<List<ApkInfo>> mSparseArrayGroup = new SparseArray<List<ApkInfo>>();
+    private final SparseArray<List<ApkInfo>> mSparseArrayGroupAllApp = new SparseArray<List<ApkInfo>>();
 
     private final List<String> mListGroupVideoFromDb = new ArrayList<String>();
     private final List<String> mListGroupGamesFromDb = new ArrayList<String>();
@@ -84,6 +106,8 @@ public class AllGroupsActivity extends Activity {
     private static int sCurGridFocusIndex;
     private static int sCurGridPage;
 
+    private static Activity mInstance;
+
     static {
         sBoundaryCount = 0;
     }
@@ -94,52 +118,97 @@ public class AllGroupsActivity extends Activity {
         setContentView(R.layout.all_group);
 
         initView();
-        initHashMapGroup();
+        initHashMapGroupAllApp();
         initHashMapGroupFromDb();
 
         sCurGridFocusIndex = 0;
+
+        reLoadAllData();
+
+        mInstance = this;
+    }
+
+    public static Activity getAllGroupActivity() {
+        return mInstance;
     }
 
     private void initView() {
         mFlipper = (ViewFlipper) findViewById(R.id.menu_flipper);
 
-        mRlGroupVideo = (RelativeLayout) findViewById(R.id.menu_layout_video);
-        mRlGroupGames = (RelativeLayout) findViewById(R.id.menu_layout_games);
-        mRlGroupApp = (RelativeLayout) findViewById(R.id.menu_layout_app);
-        mRlGroupMusic = (RelativeLayout) findViewById(R.id.menu_layout_music);
-        mRlGroupLocal = (RelativeLayout) findViewById(R.id.menu_layout_local);
+        sRlFocusUnit = (RelativeLayout) findViewById(R.id.rl_focus_unit);
+        sIvFocusBg = (ImageView) findViewById(R.id.iv_focus_bg);
+        sIvFrame = (ImageView) findViewById(R.id.iv_frame);
 
-        // mGridLayoutGroupVideo = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_video);
-        // mGridLayoutGroupGames = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_Games);
-        // mGridLayoutGroupApp = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_app);
-        // mGridLayoutGroupMusic = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_music);
-        // mGridLayoutGroupLocal = (GroupGridLayout)
-        // findViewById(R.id.gv_shortcut_local);
+        // mRlGroupVideo = (RelativeLayout)
+        // findViewById(R.id.menu_layout_video);
+        // mRlGroupGames = (RelativeLayout)
+        // findViewById(R.id.menu_layout_games);
+        // mRlGroupApp = (RelativeLayout) findViewById(R.id.menu_layout_app);
+        // mRlGroupMusic = (RelativeLayout)
+        // findViewById(R.id.menu_layout_music);
+        // mRlGroupLocal = (RelativeLayout)
+        // findViewById(R.id.menu_layout_local);
 
+        // gridlayout init start
+        mSvVideo = (ScrollView) findViewById(R.id.sv_video);
+        mSvGames = (ScrollView) findViewById(R.id.sv_games);
+        mSvApp = (ScrollView) findViewById(R.id.sv_app);
+        mSvMusic = (ScrollView) findViewById(R.id.sv_music);
+        mSvLocal = (ScrollView) findViewById(R.id.sv_local);
+
+        mSparseArrayGroupScrollView.put(INDEX_APPS, mSvVideo);
+        mSparseArrayGroupScrollView.put(INDEX_LOCAL, mSvGames);
+        mSparseArrayGroupScrollView.put(INDEX_MUSIC, mSvApp);
+        mSparseArrayGroupScrollView.put(INDEX_GAMES, mSvMusic);
+        mSparseArrayGroupScrollView.put(INDEX_VIDEO, mSvLocal);
+
+        mGridLayoutGroupVideo = (GroupGridLayout) findViewById(R.id.gv_shortcut_video);
+        mGridLayoutGroupGames = (GroupGridLayout) findViewById(R.id.gv_shortcut_games);
+        mGridLayoutGroupApp = (GroupGridLayout) findViewById(R.id.gv_shortcut_app);
+        mGridLayoutGroupMusic = (GroupGridLayout) findViewById(R.id.gv_shortcut_music);
+        mGridLayoutGroupLocal = (GroupGridLayout) findViewById(R.id.gv_shortcut_local);
+
+        mSparseArrayGroupGridLayout.put(INDEX_APPS, mGridLayoutGroupApp);
+        mSparseArrayGroupGridLayout.put(INDEX_LOCAL, mGridLayoutGroupLocal);
+        mSparseArrayGroupGridLayout.put(INDEX_MUSIC, mGridLayoutGroupMusic);
+        mSparseArrayGroupGridLayout.put(INDEX_GAMES, mGridLayoutGroupGames);
+        mSparseArrayGroupGridLayout.put(INDEX_VIDEO, mGridLayoutGroupVideo);
+        // gridlayout init end
+
+        // gridview init start
         mGridViewGroupVideo = (GroupGridView) findViewById(R.id.gv_video);
         mGridViewGroupGames = (GroupGridView) findViewById(R.id.gv_games);
         mGridViewGroupApp = (GroupGridView) findViewById(R.id.gv_app);
         mGridViewGroupMusic = (GroupGridView) findViewById(R.id.gv_music);
         mGridViewGroupLocal = (GroupGridView) findViewById(R.id.gv_local);
 
-        mSparseArrayGroupGridView.put(AllApps.INDEX_APPS, mGridViewGroupApp);
-        mSparseArrayGroupGridView.put(AllApps.INDEX_LOCAL, mGridViewGroupLocal);
-        mSparseArrayGroupGridView.put(AllApps.INDEX_MUSIC, mGridViewGroupMusic);
-        mSparseArrayGroupGridView.put(AllApps.INDEX_GAMES, mGridViewGroupGames);
-        mSparseArrayGroupGridView.put(AllApps.INDEX_VIDEO, mGridViewGroupVideo);
+        mSparseArrayGroupGridView.put(INDEX_APPS, mGridViewGroupApp);
+        mSparseArrayGroupGridView.put(INDEX_LOCAL, mGridViewGroupLocal);
+        mSparseArrayGroupGridView.put(INDEX_MUSIC, mGridViewGroupMusic);
+        mSparseArrayGroupGridView.put(INDEX_GAMES, mGridViewGroupGames);
+        mSparseArrayGroupGridView.put(INDEX_VIDEO, mGridViewGroupVideo);
+        // gridview init end
 
         if (getIntent().getBooleanExtra(START_TO_GAME, false)) {
-            mFlipper.setDisplayedChild(AllApps.INDEX_GAMES);
-            mFlipper.getChildAt(AllApps.INDEX_GAMES).requestFocus();
-            setCurGridPage(AllApps.INDEX_GAMES);
+            mFlipper.setDisplayedChild(INDEX_GAMES);
+            mFlipper.getChildAt(INDEX_GAMES).requestFocus();
+            setCurGridPage(INDEX_GAMES);
         } else {
-            mFlipper.setDisplayedChild(AllApps.INDEX_APPS);
-            mFlipper.getChildAt(AllApps.INDEX_APPS).requestFocus();
-            setCurGridPage(AllApps.INDEX_APPS);
+            mFlipper.setDisplayedChild(INDEX_APPS);
+            mFlipper.getChildAt(INDEX_APPS).requestFocus();
+            setCurGridPage(INDEX_APPS);
+        }
+    }
+
+    private void setScrollViewVisibility(int visibility) {
+        for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
+            mSparseArrayGroupScrollView.get(i).setVisibility(visibility);
+        }
+    }
+
+    private void setGroupGridViewVisibility(int visibility) {
+        for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
+            mSparseArrayGroupGridView.get(i).setVisibility(visibility);
         }
     }
 
@@ -151,19 +220,19 @@ public class AllGroupsActivity extends Activity {
         return sCurGridPage;
     }
 
-    private void initHashMapGroup() {
-        mSparseArrayGroup.put(AllApps.INDEX_VIDEO, mListGroupVideo);
-        mSparseArrayGroup.put(AllApps.INDEX_GAMES, mListGroupGames);
-        mSparseArrayGroup.put(AllApps.INDEX_APPS, mListGroupApp);
-        mSparseArrayGroup.put(AllApps.INDEX_MUSIC, mListGroupMusic);
-        mSparseArrayGroup.put(AllApps.INDEX_LOCAL, mListGroupLocal);
+    private void initHashMapGroupAllApp() {
+        mSparseArrayGroupAllApp.put(INDEX_VIDEO, mListGroupVideo);
+        mSparseArrayGroupAllApp.put(INDEX_GAMES, mListGroupGames);
+        mSparseArrayGroupAllApp.put(INDEX_APPS, mListGroupApp);
+        mSparseArrayGroupAllApp.put(INDEX_MUSIC, mListGroupMusic);
+        mSparseArrayGroupAllApp.put(INDEX_LOCAL, mListGroupLocal);
     }
 
     private void initHashMapGroupFromDb() {
-        mSparseArrayGroupFromDb.put(AllApps.INDEX_VIDEO, mListGroupVideoFromDb);
-        mSparseArrayGroupFromDb.put(AllApps.INDEX_GAMES, mListGroupGamesFromDb);
-        mSparseArrayGroupFromDb.put(AllApps.INDEX_MUSIC, mListGroupMusicFromDb);
-        mSparseArrayGroupFromDb.put(AllApps.INDEX_LOCAL, mListGroupLocalFromDb);
+        mSparseArrayGroupFromDb.put(INDEX_VIDEO, mListGroupVideoFromDb);
+        mSparseArrayGroupFromDb.put(INDEX_GAMES, mListGroupGamesFromDb);
+        mSparseArrayGroupFromDb.put(INDEX_MUSIC, mListGroupMusicFromDb);
+        mSparseArrayGroupFromDb.put(INDEX_LOCAL, mListGroupLocalFromDb);
     }
 
     public static int getCurGridFocusIndex() {
@@ -204,8 +273,8 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void loadAllCustomGroupAppsPkgFromDb() {
-        for (int i = AllApps.INDEX_VIDEO; i < AllApps.INDEX_MAX_SIZE; i++) {
-            if (i == AllApps.INDEX_APPS) {
+        for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
+            if (i == INDEX_APPS) {
                 continue;
             }
 
@@ -245,10 +314,6 @@ public class AllGroupsActivity extends Activity {
             // add the last item "Add"
             allApkInfo = new ApkInfo();
             allApkInfo.setTitle(getString(R.string.str_add));
-
-            Intent intent = new Intent();
-            allApkInfo.setIntent(intent);
-
             allApkInfo.setIcon(getResources().getDrawable(
                     R.drawable.item_img_add));
             storedlist.add(allApkInfo);
@@ -256,14 +321,14 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void loadAllGroupApps() {
-        for (int i = AllApps.INDEX_VIDEO; i < mSparseArrayGroup.size(); i++) {
-            loadAppByGroupList(mSparseArrayGroup.get(i),
+        for (int i = INDEX_VIDEO; i < mSparseArrayGroupAllApp.size(); i++) {
+            loadAppByGroupList(mSparseArrayGroupAllApp.get(i),
                     mSparseArrayGroupFromDb.get(i, null));
         }
     }
 
-    private void setPopWindow(int top, int bottom) {
-        View view = this.getWindow().getDecorView();
+    public static void setPopWindow(Activity activity, int top, int bottom) {
+        View view = activity.getWindow().getDecorView();
         view.layout(0, 0, 1279, SCREEN_HEIGHT);
         view.setDrawingCacheEnabled(true);
         Bitmap bmp = Bitmap.createBitmap(view.getDrawingCache());
@@ -292,71 +357,38 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void setAllLayoutView() {
-        // for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
-        // mSparseArrayGroupGridLayout.get(i).setLayoutView(
-        // mSparseArrayGroup.get(i));
-        // }
+        if (ExLauncher.S_GRID_LAYOUT) {
+            setScrollViewVisibility(View.VISIBLE);
+            setGroupGridViewVisibility(View.GONE);
 
-        for (int i = AllApps.INDEX_VIDEO; i < AllApps.INDEX_MAX_SIZE; i++) {
-            final GroupGridView gv = mSparseArrayGroupGridView.get(i);
-            final List<ApkInfo> listApk = mSparseArrayGroup.get(i);
-            BaseAdapter adapter = new GroupGridViewAdapter(this, listApk);
-            gv.setAdapter(adapter);
-            gv.setOnItemClickListener(new OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view,
-                        int position, long id) {
-                    // TODO Auto-generated method stub
-                    logd("[onItemClick] view : " + view + ", position : "
-                            + position);
-                    if (position == (listApk.size() - 1)) {
-                        startCustomAct(view);
-                    } else {
-                        AllGroupsActivity.this.startActivity(listApk.get(
-                                position).getIntent());
-                    }
-                }
-            });
-            gv.setOnKeyListener(new GridViewOnKeyListener(this,
-                    AllGroupsActivity.mFlipper));
-            gv.setOnItemSelectedListener(new GridViewOnItemSelectedListener());
+            for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
+                mSparseArrayGroupGridLayout.get(i).setLayoutView(
+                        mSparseArrayGroupAllApp.get(i));
+            }
+        } else {
+            setScrollViewVisibility(View.GONE);
+            setGroupGridViewVisibility(View.VISIBLE);
 
-            gv.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    logd("[onFocusChange] v : " + v + ", hasFocus : "
-                            + hasFocus);
-                    if (!hasFocus) {
-                        try {
-                            @SuppressWarnings("unchecked")
-                            Class<GridView> c = (Class<GridView>) Class
-                                    .forName("android.widget.GridView");
-                            Method[] flds = c.getDeclaredMethods();
-                            for (Method f : flds) {
-                                if ("setSelectionInt".equals(f.getName())) {
-                                    f.setAccessible(true);
-                                    f.invoke(
-                                            v,
-                                            new Object[] { Integer.valueOf(-1) });
-                                }
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        gv.setSelection(0);
-                        sCurGridFocusIndex = 0;
-                    }
-                }
-            });
+            for (int i = INDEX_VIDEO; i < INDEX_MAX_SIZE; i++) {
+                GroupGridView gv = mSparseArrayGroupGridView.get(i);
+                final List<ApkInfo> listApk = mSparseArrayGroupAllApp.get(i);
+                BaseAdapter adapter = new GroupGridViewAdapter(this, listApk);
+                gv.setAdapter(adapter);
+                gv.setOnItemClickListener(new GroupGridView.GridViewOnItemClickListener(
+                        this, listApk));
+                gv.setOnKeyListener(new GroupGridView.GridViewOnKeyListener(
+                        this, AllGroupsActivity.mFlipper));
+                gv.setOnItemSelectedListener(new GroupGridView.GridViewOnItemSelectedListener());
+                gv.setOnFocusChangeListener(new GroupGridView.GridViewOnFocusChangeListener());
+            }
         }
     }
 
-    private void startCustomAct(View view) {
+    public static void startCustomAct(Context mContext, View view) {
         Rect rect = new Rect();
         view.getGlobalVisibleRect(rect);
 
-        setPopWindow(rect.top - 10, rect.bottom + 10);
+        setPopWindow(mInstance, rect.top - 10, rect.bottom + 10);
 
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.putExtra(CustomActivity.STR_TOP, rect.top - 10);
@@ -366,7 +398,7 @@ public class AllGroupsActivity extends Activity {
         intent.setComponent(new ComponentName("com.vim.exlauncher",
                 "com.vim.exlauncher.ui.CustomActivity"));
         intent.putExtra(CustomActivity.GROUP_TYPE, getCurGridPage());
-        startActivity(intent);
+        mContext.startActivity(intent);
     }
 
     @Override
@@ -382,7 +414,8 @@ public class AllGroupsActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        reLoadAllData();
+
+        setAllLayoutView();
     }
 
     @Override
@@ -439,6 +472,29 @@ public class AllGroupsActivity extends Activity {
 
             logd("[loadAllApps] apk title : " + apkInfo.getTitle());
             sListAllApps.add(apkInfo);
+        }
+    }
+
+    public static int getItemBackground(int num) {
+        switch (num % 8 + 1) {
+        case 1:
+            return R.drawable.item_child_1;
+        case 2:
+            return R.drawable.item_child_2;
+        case 3:
+            return R.drawable.item_child_3;
+        case 4:
+            return R.drawable.item_child_4;
+        case 5:
+            return R.drawable.item_child_5;
+        case 6:
+            return R.drawable.item_child_6;
+        case 7:
+            return R.drawable.item_child_7;
+        case 8:
+            return R.drawable.item_child_8;
+        default:
+            return R.drawable.item_child_1;
         }
     }
 
@@ -527,7 +583,6 @@ public class AllGroupsActivity extends Activity {
         loadAllApps();
         loadAllCustomGroupAppsPkgFromDb();
         loadAllGroupApps();
-        setAllLayoutView();
     }
 
     @Override
