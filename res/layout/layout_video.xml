@@ -46,10 +46,11 @@
 
         <com.vim.exlauncher.ui.GroupGridLayout
             android:id="@+id/gv_shortcut_video"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:columnCount="6"
             android:orientation="horizontal"
+            android:layout_centerHorizontal="true"
             android:rowCount="20" />
     </ScrollView>
 

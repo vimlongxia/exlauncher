@@ -24,6 +24,10 @@
     <RelativeLayout
         android:id="@+id/rl_focus_unit"
         android:layout_width="wrap_content"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="invisible"
+        android:focusableInTouchMode="false" 
         android:layout_height="wrap_content" >
 
         <ImageView
@@ -35,7 +39,7 @@
 
         <TextView
             android:id="@+id/tv_focus"
-            android:layout_width="wrap_content"
+            android:layout_width="120dp"
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/iv_focus"
             android:layout_marginBottom="20dp"
@@ -51,6 +55,7 @@
         android:id="@+id/iv_focus_bg"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:visibility="invisible"
         android:contentDescription="@string/app_name"
         android:scaleType="fitCenter" />
 
@@ -59,6 +64,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/frame"
+        android:visibility="invisible"
         android:contentDescription="@string/app_name"
         android:scaleType="fitCenter" />
 

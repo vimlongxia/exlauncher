@@ -47,13 +47,13 @@
 
         <com.vim.exlauncher.ui.GroupGridLayout
             android:id="@+id/gv_shortcut_app"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:columnCount="6"
-            android:descendantFocusability="afterDescendants"
             android:orientation="horizontal"
             android:rowCount="20"
-            android:useDefaultMargins="true" />
+            android:layout_centerHorizontal="true" 
+             />
     </ScrollView>
 
     <com.vim.exlauncher.ui.GroupGridView

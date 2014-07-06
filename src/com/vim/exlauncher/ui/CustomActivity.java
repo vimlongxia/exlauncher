@@ -1,6 +1,5 @@
 package com.vim.exlauncher.ui;
 
-import java.io.File;
 import java.util.List;
 
 import android.app.ActionBar.LayoutParams;

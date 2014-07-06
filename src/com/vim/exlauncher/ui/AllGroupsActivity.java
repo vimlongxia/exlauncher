@@ -1,11 +1,9 @@
 package com.vim.exlauncher.ui;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import android.R.integer;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -20,10 +18,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
@@ -37,11 +32,12 @@ import com.vim.exlauncher.data.GroupUtils;
 public class AllGroupsActivity extends Activity {
     private static final String TAG = "AllGroupsActivity";
 
-    public static ViewFlipper mFlipper;
+    public static ViewFlipper sFlipper;
 
     public static RelativeLayout sRlFocusUnit;
     public static ImageView sIvFocusBg;
     public static ImageView sIvFrame;
+    public static boolean sIsRunAnim = false;
 
     // private RelativeLayout mRlGroupVideo;
     // private RelativeLayout mRlGroupGames;
@@ -107,6 +103,7 @@ public class AllGroupsActivity extends Activity {
     private static int sCurGridPage;
 
     private static Activity mInstance;
+    public static boolean sIntoCustom;
 
     static {
         sBoundaryCount = 0;
@@ -123,9 +120,10 @@ public class AllGroupsActivity extends Activity {
 
         sCurGridFocusIndex = 0;
 
-        reLoadAllData();
+        // reLoadAllData();
 
         mInstance = this;
+        sIntoCustom = false;
     }
 
     public static Activity getAllGroupActivity() {
@@ -133,7 +131,7 @@ public class AllGroupsActivity extends Activity {
     }
 
     private void initView() {
-        mFlipper = (ViewFlipper) findViewById(R.id.menu_flipper);
+        sFlipper = (ViewFlipper) findViewById(R.id.menu_flipper);
 
         sRlFocusUnit = (RelativeLayout) findViewById(R.id.rl_focus_unit);
         sIvFocusBg = (ImageView) findViewById(R.id.iv_focus_bg);
@@ -190,12 +188,12 @@ public class AllGroupsActivity extends Activity {
         // gridview init end
 
         if (getIntent().getBooleanExtra(START_TO_GAME, false)) {
-            mFlipper.setDisplayedChild(INDEX_GAMES);
-            mFlipper.getChildAt(INDEX_GAMES).requestFocus();
+            sFlipper.setDisplayedChild(INDEX_GAMES);
+            sFlipper.getChildAt(INDEX_GAMES).requestFocus();
             setCurGridPage(INDEX_GAMES);
         } else {
-            mFlipper.setDisplayedChild(INDEX_APPS);
-            mFlipper.getChildAt(INDEX_APPS).requestFocus();
+            sFlipper.setDisplayedChild(INDEX_APPS);
+            sFlipper.getChildAt(INDEX_APPS).requestFocus();
             setCurGridPage(INDEX_APPS);
         }
     }
@@ -377,7 +375,7 @@ public class AllGroupsActivity extends Activity {
                 gv.setOnItemClickListener(new GroupGridView.GridViewOnItemClickListener(
                         this, listApk));
                 gv.setOnKeyListener(new GroupGridView.GridViewOnKeyListener(
-                        this, AllGroupsActivity.mFlipper));
+                        this, AllGroupsActivity.sFlipper));
                 gv.setOnItemSelectedListener(new GroupGridView.GridViewOnItemSelectedListener());
                 gv.setOnFocusChangeListener(new GroupGridView.GridViewOnFocusChangeListener());
             }
@@ -399,6 +397,7 @@ public class AllGroupsActivity extends Activity {
                 "com.vim.exlauncher.ui.CustomActivity"));
         intent.putExtra(CustomActivity.GROUP_TYPE, getCurGridPage());
         mContext.startActivity(intent);
+        sIntoCustom = true;
     }
 
     @Override
@@ -409,13 +408,34 @@ public class AllGroupsActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+
+        AllGroupsActivity.sRlFocusUnit.setVisibility(View.INVISIBLE);
+        AllGroupsActivity.sIvFrame.setVisibility(View.INVISIBLE);
+        AllGroupsActivity.sIvFocusBg.setVisibility(View.INVISIBLE);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        logd("[onResume]");
 
+        reLoadAllData();
         setAllLayoutView();
+        focusCur();
+    }
+
+    private void focusCur() {
+        GroupGridLayout gridLayout = mSparseArrayGroupGridLayout
+                .get(getCurGridPage());
+        int curPos = 0;
+        if (sIntoCustom) {
+            curPos = gridLayout.getChildCount() - 1;
+            // gridLayout.getChildAt(curPos).requestFocus();
+        } else {
+            curPos = 0;
+        }
+
+        sIntoCustom = false;
     }
 
     @Override

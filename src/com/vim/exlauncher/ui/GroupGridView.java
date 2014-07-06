@@ -46,7 +46,7 @@ public class GroupGridView extends GridView {
         super.onDraw(canvas);
     }
 
-    final class GridViewOnItemClickListener implements OnItemClickListener {
+    static final class GridViewOnItemClickListener implements OnItemClickListener {
         private Context mContext;
         private List<ApkInfo> mListApp;
 
@@ -68,7 +68,7 @@ public class GroupGridView extends GridView {
         }
     }
 
-    final class GridViewOnFocusChangeListener implements OnFocusChangeListener {
+    static final class GridViewOnFocusChangeListener implements OnFocusChangeListener {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
             logd("[onFocusChange] v : " + v + ", hasFocus : " + hasFocus);
@@ -94,7 +94,7 @@ public class GroupGridView extends GridView {
         }
     }
 
-    final class GridViewOnKeyListener implements OnKeyListener {
+    static final class GridViewOnKeyListener implements OnKeyListener {
         private Animation mAnimLeftIn;
         private Animation mAnimLeftOut;
         private Animation mAnimRightIn;
