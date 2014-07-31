@@ -32,5 +32,16 @@
     <string name="app_not_found">Application Not Found!</string>
     <string name="click_list_item_to_read">Click the list item to read</string>
     <string name="box_lock">Your Box has been Locked due to </string>
+    <string name="register_info">Register Info</string>
+    <string name="register_email">Email :</string>
+    <string name="register_phone">Phone :</string>
+    <string name="register_country">Country :</string>
+    <string name="register_city">City :</string>
+    <string name="register_reg">Register</string>
+    <string name="register_cancel">Cancel</string>
+    <string name="error">Error</string>
+    <string name="error_email">Invalid Email Address!</string>
+    <string name="error_phone">Invalid Phone Number!</string>
+    <string name="error_city">City must not be empty!</string>
 
 </resources>

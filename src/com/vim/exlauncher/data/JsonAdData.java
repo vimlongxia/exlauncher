@@ -3,6 +3,7 @@ package com.vim.exlauncher.data;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.R.bool;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -16,6 +17,7 @@ public class JsonAdData {
     private Context mContext;
     private JSONObject mJsonObj;
 
+    private String mRegisterStatus;
     private String mDealerLogo;
     private String mName;
     private String mExpiryDate;
@@ -70,6 +72,7 @@ public class JsonAdData {
 
     public static final String USERS = "Users";
     public static final String PERSONAL = "Personal";
+    public static final String REGISTER_STATUS = "Register";
     public static final String DEALER_LOGO = "Dealer_logo";
     public static final String NAME = "Name";
     public static final String EXPIRY_DATE = "Expiry_Date";
@@ -134,6 +137,16 @@ public class JsonAdData {
     public JsonAdData(Context context, JSONObject jsonObj) {
         mContext = context;
         mJsonObj = jsonObj;
+    }
+    
+    public boolean isRegister(){
+        boolean registerStatus = true;
+        if (!TextUtils.isEmpty(mRegisterStatus)
+                && mRegisterStatus.equalsIgnoreCase("NO")) {
+            registerStatus = true;
+        }
+        
+        return registerStatus;
     }
 
     public boolean getLockStatus() {
@@ -268,6 +281,7 @@ public class JsonAdData {
             JSONObject personalJsonObject = new JSONObject(personalJsonString);
 
             // parse personal data
+            mRegisterStatus = personalJsonObject.getString(REGISTER_STATUS);
             mDealerLogo = personalJsonObject.getString(DEALER_LOGO);
             mName = personalJsonObject.getString(NAME);
             mExpiryDate = personalJsonObject.getString(EXPIRY_DATE);

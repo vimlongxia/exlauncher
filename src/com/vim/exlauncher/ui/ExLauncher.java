@@ -29,6 +29,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -45,23 +46,25 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnFocusChangeListener;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.serpro.library.String.MCrypt;
 import com.vim.exlauncher.R;
-import com.vim.exlauncher.data.ExLauncherContentProvider;
 import com.vim.exlauncher.data.HttpRequest;
 import com.vim.exlauncher.data.JsonAdData;
 import com.vim.exlauncher.data.JsonWeatherData;
@@ -132,6 +135,8 @@ public class ExLauncher extends Activity {
     private static final String SAVED_WIFI_MAC = "ubootenv.var.wifimac";
     private String mSavedMacWifi;
     private String mSavedMacEth;
+    
+    private String mRegCountry;
 
     private static final String TIME_FORMAT = "HH:mm";
     public static final String ETH_ADDRESS_PATH = "/sys/class/net/eth0/address";
@@ -149,6 +154,8 @@ public class ExLauncher extends Activity {
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/fitv.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
+    
+    private static final String REGISTER_URL = "http://mymoviletvhd.com/registerbox.php";
 
     public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
@@ -180,6 +187,7 @@ public class ExLauncher extends Activity {
     private PicHandler mPicHandler;
     private Weather mWeather;
     private AlertDialog mUpdateDialog;
+    private AlertDialog mRegisterDialog;
 
     private static final int MSG_DATA_QUIT = 0;
     private static final int MSG_DATA_GET_JSON = 1;
@@ -254,6 +262,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_UI_DISPLAY_RIGHT_SIDE = 4;
     private static final int MSG_UI_DISPLAY_BOTTOM_BUTTON = 5;
     private static final int MSG_UI_DISPLAY_LOCK = 6;
+    private static final int MSG_UI_CHECK_REGISTER_STATUS = 7;
 
     private static final int MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL = 5 * 1000;
     private static final int MSG_UI_DEALER_LOGO_UPDATE_INTERNAL = 5 * 1000;
@@ -294,10 +303,104 @@ public class ExLauncher extends Activity {
             case MSG_UI_DISPLAY_LOCK:
                 displayLockStatus();
                 break;
+                
+            case MSG_UI_CHECK_REGISTER_STATUS:
+                checkRegisterStatus();
+                break;
             }
         }
-
     };
+    
+    private void checkRegisterStatus(){
+        if (mJsonAdData.isRegister())
+            return;
+
+        if (mRegisterDialog == null){
+            showRegisterDialog();
+        }
+    }
+    
+    private void registerToServer(){
+        
+    }
+
+    private void showErrorDailog(String errStr){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.error);
+        builder.setMessage(errStr);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        builder.create().show();
+    }
+    
+    private void showRegisterDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.register_info);
+        
+        View view = this.getLayoutInflater().inflate(R.layout.layout_dlg_register, null);
+        final EditText etEmail = (EditText) view.findViewById(R.id.et_email);
+        final EditText etPhone = (EditText) view.findViewById(R.id.et_phone);
+        final EditText etCity = (EditText) view.findViewById(R.id.et_city);
+        final Spinner spCountry = (Spinner) view.findViewById(R.id.spinner_country);
+
+        spCountry.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            
+        } );
+        
+        Button btnReg = (Button) view.findViewById(R.id.btn_register);
+        Button btnCancel = (Button) view.findViewById(R.id.btn_cancel);
+
+        btnReg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                if (!Patterns.EMAIL_ADDRESS.matcher(etEmail.getText()).matches()) {
+                    showErrorDailog(ExLauncher.this.getString(R.string.error_email));
+                    return;
+                }
+
+                if (!Patterns.PHONE.matcher(etPhone.getText()).matches()) {
+                    showErrorDailog(ExLauncher.this.getString(R.string.error_phone));
+                    return;
+                }
+                
+                if (TextUtils.isEmpty(etCity.getText())) {
+                    showErrorDailog(ExLauncher.this.getString(R.string.error_city));
+                    return;
+                }
+
+                registerToServer();
+                mRegisterDialog.dismiss();
+                mRegisterDialog = null;
+            }
+        });
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                mRegisterDialog.dismiss();
+                mRegisterDialog = null;
+            }
+        });
+
+        builder.setView(view);
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                // TODO Auto-generated method stub
+                mRegisterDialog = null;
+            }
+        });
+
+        mRegisterDialog = builder.create();
+        mRegisterDialog.show();
+    }
 
     public static void resetMsgStatusAndRefresh(boolean status) {
         if (mJsonAdData != null) {
@@ -615,6 +718,7 @@ public class ExLauncher extends Activity {
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_RIGHT_SIDE);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_BOTTOM_BUTTON);
         mUiHandler.sendEmptyMessage(MSG_UI_DISPLAY_LOCK);
+        mUiHandler.sendEmptyMessage(MSG_UI_CHECK_REGISTER_STATUS);
     }
 
     private boolean hasNetworkConnected() {
