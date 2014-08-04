@@ -43,5 +43,6 @@
     <string name="error_email">Invalid Email Address!</string>
     <string name="error_phone">Invalid Phone Number!</string>
     <string name="error_city">City must not be empty!</string>
+    <string name="register_ok">Register Success!</string>
 
 </resources>

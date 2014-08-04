@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string-array name="reg_country">
+        <item>China</item>
+        <item>USA</item>
+    </string-array>
+
     <string-array name="add_to_group_type">
         <item>Add to Video Group</item>
         <item>Add to Games Group</item>

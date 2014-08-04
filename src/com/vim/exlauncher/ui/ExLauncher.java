@@ -29,7 +29,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -49,9 +48,10 @@ import android.util.Log;
 import android.util.Patterns;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnFocusChangeListener;
 import android.widget.AbsoluteLayout;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -59,7 +59,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -135,7 +134,7 @@ public class ExLauncher extends Activity {
     private static final String SAVED_WIFI_MAC = "ubootenv.var.wifimac";
     private String mSavedMacWifi;
     private String mSavedMacEth;
-    
+
     private String mRegCountry;
 
     private static final String TIME_FORMAT = "HH:mm";
@@ -154,8 +153,8 @@ public class ExLauncher extends Activity {
     private static final String JSON_DATA_AD_URL = "http://mymobiletvhd.com/android/fitv.php";
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
-    
-    private static final String REGISTER_URL = "http://mymoviletvhd.com/registerbox.php";
+
+    private static final String REGISTER_URL = "http://mymoviletvhd.com/registerbox.php?data=";
 
     public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
@@ -303,55 +302,133 @@ public class ExLauncher extends Activity {
             case MSG_UI_DISPLAY_LOCK:
                 displayLockStatus();
                 break;
-                
+
             case MSG_UI_CHECK_REGISTER_STATUS:
                 checkRegisterStatus();
                 break;
             }
         }
     };
-    
-    private void checkRegisterStatus(){
+
+    private void checkRegisterStatus() {
         if (mJsonAdData.isRegister())
             return;
 
-        if (mRegisterDialog == null){
+        if (mRegisterDialog == null) {
             showRegisterDialog();
         }
     }
-    
-    private void registerToServer(){
-        
+
+    private static final String EQUAL = "=";
+    private static final String CONJUNCTION = "&";
+    private static final String EMAIL = "email";
+    private static final String PHONE = "phone";
+    private static final String COUNTRY = "Country";
+    private static final String CITY = "city";
+    private static final String WIFI_MAC = "wifimac";
+    private static final String ETH_MAC = "mac";
+
+    private void registerToServer(String strEmail, String strPhone,
+            String strCountry, String strCity) {
+        String wifiMac = mSharedPreferences.getString(SAVED_WIFI_MAC, null);
+        String ethMac = mSharedPreferences.getString(SAVED_ETH_MAC, null);
+
+        if (TextUtils.isEmpty(wifiMac) || TextUtils.isEmpty(ethMac)) {
+            loge("[registerToServer] wifiMac or ethMac is empty!");
+            return;
+        }
+
+        // "email=useremail&phone=userphone&Country=userCountry&city=userCity&wifimac=userwifimac&mac=userEthernetmac"
+        MCrypt mcrypt = new MCrypt();
+        String encrypted = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(EMAIL + EQUAL + strEmail);
+        sb.append(CONJUNCTION);
+        sb.append(PHONE + EQUAL + strPhone);
+        sb.append(CONJUNCTION);
+        sb.append(COUNTRY + EQUAL + strCountry);
+        sb.append(CONJUNCTION);
+        sb.append(CITY + EQUAL + strCity);
+        sb.append(CONJUNCTION);
+        sb.append(WIFI_MAC + EQUAL + wifiMac);
+        sb.append(CONJUNCTION);
+        sb.append(ETH_MAC + EQUAL + ethMac);
+
+        try {
+            encrypted = MCrypt.bytesToHex(mcrypt.encrypt(sb.toString()));
+        } catch (Exception e) {
+            loge("[registerToServer] encrypt error!");
+            encrypted = "";
+        }
+
+        if (TextUtils.isEmpty(encrypted)) {
+            loge("[registerToServer] encrypted data is empty!");
+            return;
+        }
+
+        String regUrl = REGISTER_URL + encrypted;
+        InputStream result = HttpRequest.getStreamFromUrl(regUrl);
+        if (result == null) {
+            loge("[registerToServer] error when registerring on " + regUrl);
+            return;
+        } else {
+            Toast.makeText(this, R.string.register_ok, Toast.LENGTH_LONG)
+                    .show();
+        }
     }
 
-    private void showErrorDailog(String errStr){
+    private void showErrorDailog(String errStr) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.error);
         builder.setMessage(errStr);
-        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                // TODO Auto-generated method stub
-                
-            }
-        });
+        builder.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
         builder.create().show();
     }
-    
+
     private void showRegisterDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.register_info);
-        
-        View view = this.getLayoutInflater().inflate(R.layout.layout_dlg_register, null);
+
+        View view = this.getLayoutInflater().inflate(
+                R.layout.layout_dlg_register, null);
         final EditText etEmail = (EditText) view.findViewById(R.id.et_email);
         final EditText etPhone = (EditText) view.findViewById(R.id.et_phone);
         final EditText etCity = (EditText) view.findViewById(R.id.et_city);
-        final Spinner spCountry = (Spinner) view.findViewById(R.id.spinner_country);
+        final Spinner spCountry = (Spinner) view
+                .findViewById(R.id.spinner_country);
 
-        spCountry.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            
-        } );
-        
+        String[] regCountry = getResources()
+                .getStringArray(R.array.reg_country);
+        mRegCountry = regCountry[0];
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, regCountry);
+        spCountry.setAdapter(adapter);
+        spCountry
+                .setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent,
+                            View view, int position, long id) {
+                        // TODO Auto-generated method stub
+                        mRegCountry = parent.getItemAtPosition(position)
+                                .toString();
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                });
+
         Button btnReg = (Button) view.findViewById(R.id.btn_register);
         Button btnCancel = (Button) view.findViewById(R.id.btn_cancel);
 
@@ -359,22 +436,29 @@ public class ExLauncher extends Activity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
-                if (!Patterns.EMAIL_ADDRESS.matcher(etEmail.getText()).matches()) {
-                    showErrorDailog(ExLauncher.this.getString(R.string.error_email));
+                if (!Patterns.EMAIL_ADDRESS.matcher(
+                        etEmail.getText().toString()).matches()) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_email));
                     return;
                 }
 
-                if (!Patterns.PHONE.matcher(etPhone.getText()).matches()) {
-                    showErrorDailog(ExLauncher.this.getString(R.string.error_phone));
-                    return;
-                }
-                
-                if (TextUtils.isEmpty(etCity.getText())) {
-                    showErrorDailog(ExLauncher.this.getString(R.string.error_city));
+                if (!Patterns.PHONE.matcher(etPhone.getText().toString())
+                        .matches()) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_phone));
                     return;
                 }
 
-                registerToServer();
+                if (TextUtils.isEmpty(etCity.getText().toString())) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_city));
+                    return;
+                }
+
+                registerToServer(etEmail.getText().toString(), etPhone
+                        .getText().toString(), mRegCountry, etCity.getText()
+                        .toString());
                 mRegisterDialog.dismiss();
                 mRegisterDialog = null;
             }
