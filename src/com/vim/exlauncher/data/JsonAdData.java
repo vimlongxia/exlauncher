@@ -143,7 +143,7 @@ public class JsonAdData {
         boolean registerStatus = true;
         if (!TextUtils.isEmpty(mRegisterStatus)
                 && mRegisterStatus.equalsIgnoreCase("NO")) {
-            registerStatus = true;
+            registerStatus = false;
         }
         
         return registerStatus;

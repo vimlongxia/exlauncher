@@ -131,6 +131,7 @@ public class ExLauncherContentProvider extends ContentProvider {
             if (rowId > 0) {
                 result = ContentUris.withAppendedId(url, rowId);
             }
+            break;
 
         case URL_GROUP_ALL:
         case URL_GROUP_ID:
@@ -139,7 +140,6 @@ public class ExLauncherContentProvider extends ContentProvider {
             if (rowId > 0) {
                 result = ContentUris.withAppendedId(url, rowId);
             }
-
             break;
 
         default:
