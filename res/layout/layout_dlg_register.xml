@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:visibility="gone"
+    android:layout_marginLeft="300dp"
+    android:layout_marginRight="300dp"
+    android:layout_marginTop="150dp"
+    android:layout_marginBottom="150dp"
+    android:id="@+id/rl_reg"
     android:orientation="vertical" >
 
     <TextView
@@ -60,29 +66,12 @@
         android:inputType="none"
         android:labelFor="@id/et_city" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btn_register"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:layout_marginTop="10dp"
-        android:orientation="horizontal" >
+        android:ems="5"
+        android:text="@string/register_reg" />
 
-        <Button
-            android:id="@+id/btn_register"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="5"
-            android:text="@string/register_reg" />
-
-        <Button
-            android:id="@+id/btn_cancel"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:ems="5"
-            android:text="@string/register_cancel" />
-    </LinearLayout>
-
-</LinearLayout>
+</RelativeLayout>

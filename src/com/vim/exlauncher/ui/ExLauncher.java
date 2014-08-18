@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
+import android.R.bool;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -120,6 +121,14 @@ public class ExLauncher extends Activity {
     private ImageView mIvWifi;
     private ImageView mIvEthernet;
     private ImageView mIvUsb;
+    
+    // reg
+    private RelativeLayout mRlReg;
+    private EditText mEtEmail;
+    private EditText mEtPhone;
+    private Spinner mSpCountry;
+    private EditText mEtCity;
+    private Button mBtnReg;
 
     private ImageButtonOnClickListener mImageButtonListener;
     private OnFocusChangeListener mImageButtonOnFocusChangeListener;
@@ -311,12 +320,19 @@ public class ExLauncher extends Activity {
     };
 
     private void checkRegisterStatus() {
-        if (mJsonAdData.isRegister())
-            return;
-
-        if (mRegisterDialog == null) {
-            showRegisterDialog();
+        boolean reg = false;
+        if ((mJsonAdData != null) && mJsonAdData.isReg()) {
+            reg = true;
         }
+
+        if (!reg) {
+//          if (mRegisterDialog == null) {
+//              showRegisterDialog();
+//          }
+        }
+        
+        mRlReg.setVisibility(reg ? View.GONE : View.VISIBLE);
+        mRlMain.setVisibility(reg ? View.VISIBLE : View.GONE);
     }
 
     private static final String EQUAL = "=";
@@ -367,13 +383,21 @@ public class ExLauncher extends Activity {
         }
 
         String regUrl = REGISTER_URL + encrypted;
+        
+        logd("[registerToServer] regUrl : " + regUrl);
+        
         InputStream result = HttpRequest.getStreamFromUrl(regUrl);
+        logd("[registerToServer] result : " + result);
         if (result == null) {
             loge("[registerToServer] error when registerring on " + regUrl);
             return;
         } else {
             Toast.makeText(this, R.string.register_ok, Toast.LENGTH_LONG)
                     .show();
+            
+            // register successful, try to check lock status
+            displayLockStatus();
+            mRlReg.setVisibility(View.GONE);
         }
     }
 
@@ -430,7 +454,6 @@ public class ExLauncher extends Activity {
                 });
 
         Button btnReg = (Button) view.findViewById(R.id.btn_register);
-        Button btnCancel = (Button) view.findViewById(R.id.btn_cancel);
 
         btnReg.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -459,15 +482,6 @@ public class ExLauncher extends Activity {
                 registerToServer(etEmail.getText().toString(), etPhone
                         .getText().toString(), mRegCountry, etCity.getText()
                         .toString());
-                mRegisterDialog.dismiss();
-                mRegisterDialog = null;
-            }
-        });
-
-        btnCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
                 mRegisterDialog.dismiss();
                 mRegisterDialog = null;
             }
@@ -1558,6 +1572,7 @@ public class ExLauncher extends Activity {
         super.onResume();
         logd("[onResume]");
         displayLockStatus();
+        checkRegisterStatus();
         displayBottomButtom();
         displayStatus();
         displayRightSide();
@@ -1661,6 +1676,7 @@ public class ExLauncher extends Activity {
     private void initRes() {
         mRlMain = (RelativeLayout) findViewById(R.id.rl_main);
         mRlLock = (RelativeLayout) findViewById(R.id.rl_lock);
+        mRlReg = (RelativeLayout) findViewById(R.id.rl_reg);
         mTvLock = (TextView) findViewById(R.id.tv_lock);
 
         mImageButtonListener = new ImageButtonOnClickListener(this);
@@ -1730,6 +1746,68 @@ public class ExLauncher extends Activity {
         initBottomButton();
         initLatestHits();
         initRightSide();
+        initReg();
+    }
+    
+    private void initReg() {
+        mEtCity = (EditText) findViewById(R.id.et_city);
+        mEtEmail = (EditText) findViewById(R.id.et_email);
+        mSpCountry = (Spinner) findViewById(R.id.spinner_country);
+        mEtPhone = (EditText) findViewById(R.id.et_phone);
+        
+        String[] regCountry = getResources()
+                .getStringArray(R.array.reg_country);
+        mRegCountry = regCountry[0];
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, regCountry);
+        mSpCountry.setAdapter(adapter);
+        mSpCountry
+                .setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent,
+                            View view, int position, long id) {
+                        // TODO Auto-generated method stub
+                        mRegCountry = parent.getItemAtPosition(position)
+                                .toString();
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
+        
+        mBtnReg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                if (!Patterns.EMAIL_ADDRESS.matcher(
+                        mEtEmail.getText().toString()).matches()) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_email));
+                    return;
+                }
+
+                if (!Patterns.PHONE.matcher(mEtPhone.getText().toString())
+                        .matches()) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_phone));
+                    return;
+                }
+
+                if (TextUtils.isEmpty(mEtCity.getText().toString())) {
+                    showErrorDailog(ExLauncher.this
+                            .getString(R.string.error_city));
+                    return;
+                }
+
+                registerToServer(mEtEmail.getText().toString(), mEtPhone
+                        .getText().toString(), mRegCountry, mEtCity.getText()
+                        .toString());
+            }
+        });
     }
 
     private void initBottomButton() {

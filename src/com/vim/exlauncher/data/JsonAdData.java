@@ -17,7 +17,7 @@ public class JsonAdData {
     private Context mContext;
     private JSONObject mJsonObj;
 
-    private String mRegisterStatus;
+    private String mRegStatus;
     private String mDealerLogo;
     private String mName;
     private String mExpiryDate;
@@ -139,14 +139,14 @@ public class JsonAdData {
         mJsonObj = jsonObj;
     }
     
-    public boolean isRegister(){
-        boolean registerStatus = true;
-        if (!TextUtils.isEmpty(mRegisterStatus)
-                && mRegisterStatus.equalsIgnoreCase("NO")) {
-            registerStatus = false;
+    public boolean isReg(){
+        boolean regStatus = true;
+        if (!TextUtils.isEmpty(mRegStatus)
+                && mRegStatus.equalsIgnoreCase("NO")) {
+            regStatus = false;
         }
         
-        return registerStatus;
+        return regStatus;
     }
 
     public boolean getLockStatus() {
@@ -281,7 +281,7 @@ public class JsonAdData {
             JSONObject personalJsonObject = new JSONObject(personalJsonString);
 
             // parse personal data
-            mRegisterStatus = personalJsonObject.getString(REGISTER_STATUS);
+            mRegStatus = personalJsonObject.getString(REGISTER_STATUS);
             mDealerLogo = personalJsonObject.getString(DEALER_LOGO);
             mName = personalJsonObject.getString(NAME);
             mExpiryDate = personalJsonObject.getString(EXPIRY_DATE);

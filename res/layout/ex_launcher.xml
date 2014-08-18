@@ -40,4 +40,6 @@
             android:textSize="40sp" />
     </RelativeLayout>
 
+    <include layout="@layout/layout_dlg_register"/>
+
 </RelativeLayout>
