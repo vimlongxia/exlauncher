@@ -37,6 +37,7 @@
     <string name="register_phone">Phone :</string>
     <string name="register_country">Country :</string>
     <string name="register_city">City :</string>
+    <string name="register_registration">Registration</string>
     <string name="register_reg">Register</string>
     <string name="register_cancel">Cancel</string>
     <string name="error">Error</string>
@@ -44,5 +45,6 @@
     <string name="error_phone">Invalid Phone Number!</string>
     <string name="error_city">City must not be empty!</string>
     <string name="register_ok">Register Success!</string>
+    <string name="register_fail">                Registration fail! \nPlease contact Dealer or email livetvbox@yahoo.com</string>
 
 </resources>

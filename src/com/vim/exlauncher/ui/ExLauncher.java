@@ -4,8 +4,11 @@ import static com.vim.exlauncher.data.JsonAdData.AD_PIC_PREFIX;
 import static com.vim.exlauncher.data.JsonAdData.PVAD_PIC_PREFIX;
 import static com.vim.exlauncher.data.JsonAdData.STATIC_AD_PIC_PREFIX;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,7 +21,6 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
-import android.R.bool;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -121,9 +123,9 @@ public class ExLauncher extends Activity {
     private ImageView mIvWifi;
     private ImageView mIvEthernet;
     private ImageView mIvUsb;
-    
+
     // reg
-    private RelativeLayout mRlReg;
+    private LinearLayout mLlReg;
     private EditText mEtEmail;
     private EditText mEtPhone;
     private Spinner mSpCountry;
@@ -326,12 +328,12 @@ public class ExLauncher extends Activity {
         }
 
         if (!reg) {
-//          if (mRegisterDialog == null) {
-//              showRegisterDialog();
-//          }
+            // if (mRegisterDialog == null) {
+            // showRegisterDialog();
+            // }
         }
-        
-        mRlReg.setVisibility(reg ? View.GONE : View.VISIBLE);
+
+        mLlReg.setVisibility(reg ? View.GONE : View.VISIBLE);
         mRlMain.setVisibility(reg ? View.VISIBLE : View.GONE);
     }
 
@@ -383,21 +385,39 @@ public class ExLauncher extends Activity {
         }
 
         String regUrl = REGISTER_URL + encrypted;
-        
+
         logd("[registerToServer] regUrl : " + regUrl);
+
+        InputStream is = HttpRequest.getStreamFromUrl(regUrl);
+
+        StringBuilder total = new StringBuilder();
         
-        InputStream result = HttpRequest.getStreamFromUrl(regUrl);
+        if (is != null) {
+            String line = "";
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            try {
+                while ((line = rd.readLine()) != null) {
+                    total.append(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        String result = total.toString();
         logd("[registerToServer] result : " + result);
-        if (result == null) {
-            loge("[registerToServer] error when registerring on " + regUrl);
-            return;
-        } else {
+        if (!TextUtils.isEmpty(regUrl) && result.contains("success")) {
             Toast.makeText(this, R.string.register_ok, Toast.LENGTH_LONG)
                     .show();
-            
+
             // register successful, try to check lock status
             displayLockStatus();
-            mRlReg.setVisibility(View.GONE);
+            mLlReg.setVisibility(View.GONE);
+        } else {
+            loge("[registerToServer] error when registerring on " + regUrl);
+            mTvLock.setText(getString(R.string.register_fail));
+            mRlLock.setVisibility(View.VISIBLE);
+            mLlReg.setVisibility(View.GONE);
         }
     }
 
@@ -1572,7 +1592,7 @@ public class ExLauncher extends Activity {
         super.onResume();
         logd("[onResume]");
         displayLockStatus();
-        checkRegisterStatus();
+//        checkRegisterStatus();
         displayBottomButtom();
         displayStatus();
         displayRightSide();
@@ -1676,7 +1696,7 @@ public class ExLauncher extends Activity {
     private void initRes() {
         mRlMain = (RelativeLayout) findViewById(R.id.rl_main);
         mRlLock = (RelativeLayout) findViewById(R.id.rl_lock);
-        mRlReg = (RelativeLayout) findViewById(R.id.rl_reg);
+        mLlReg = (LinearLayout) findViewById(R.id.ll_reg);
         mTvLock = (TextView) findViewById(R.id.tv_lock);
 
         mImageButtonListener = new ImageButtonOnClickListener(this);
@@ -1748,13 +1768,14 @@ public class ExLauncher extends Activity {
         initRightSide();
         initReg();
     }
-    
+
     private void initReg() {
         mEtCity = (EditText) findViewById(R.id.et_city);
         mEtEmail = (EditText) findViewById(R.id.et_email);
         mSpCountry = (Spinner) findViewById(R.id.spinner_country);
         mEtPhone = (EditText) findViewById(R.id.et_phone);
-        
+        mBtnReg = (Button) findViewById(R.id.btn_register);
+
         String[] regCountry = getResources()
                 .getStringArray(R.array.reg_country);
         mRegCountry = regCountry[0];
@@ -1778,7 +1799,7 @@ public class ExLauncher extends Activity {
 
                     }
                 });
-        
+
         mBtnReg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
