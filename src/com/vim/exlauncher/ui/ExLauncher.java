@@ -165,7 +165,7 @@ public class ExLauncher extends Activity {
     private static final String JSON_DATA_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
     private static final String LOGO_NAME = "logo.png";
 
-    private static final String REGISTER_URL = "http://mymoviletvhd.com/registerbox.php?data=";
+    private static final String REGISTER_URL = "http://mymobiletvhd.com/registerbox.php?data=";
 
     public static final int MAX_AD_PIC_ROTATE_NUM = 4;
     private static final int MAX_VIDEO_PIC_ROTATE_NUM = 4;
@@ -202,6 +202,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_DATA_QUIT = 0;
     private static final int MSG_DATA_GET_JSON = 1;
     private static final int MSG_DATA_GET_JSON_LOOP = 2;
+    private static final int MSG_DATA_REGISTER = 3;
 
     private static final int GET_JSON_DELAY = 15 * 60 * 1000;
     private static final int GET_JSON_DELAY_FOR_NETRECEIVER = 2 * 1000;
@@ -228,6 +229,12 @@ public class ExLauncher extends Activity {
                 this.sendEmptyMessageDelayed(MSG_DATA_GET_JSON_LOOP,
                         GET_JSON_DELAY);
                 getJsonData();
+                break;
+
+            case MSG_DATA_REGISTER:
+                registerToServer(mEtEmail.getText().toString(), mEtPhone
+                        .getText().toString(), mRegCountry, mEtCity.getText()
+                        .toString());
                 break;
             }
         }
@@ -273,6 +280,7 @@ public class ExLauncher extends Activity {
     private static final int MSG_UI_DISPLAY_BOTTOM_BUTTON = 5;
     private static final int MSG_UI_DISPLAY_LOCK = 6;
     private static final int MSG_UI_CHECK_REGISTER_STATUS = 7;
+    private static final int MSG_UI_DISPLAY_REGISTER_RESULT = 8;
 
     private static final int MSG_UI_LAYTEST_HITS_UPDATE_INTERNAL = 5 * 1000;
     private static final int MSG_UI_DEALER_LOGO_UPDATE_INTERNAL = 5 * 1000;
@@ -317,6 +325,10 @@ public class ExLauncher extends Activity {
             case MSG_UI_CHECK_REGISTER_STATUS:
                 checkRegisterStatus();
                 break;
+
+            case MSG_UI_DISPLAY_REGISTER_RESULT:
+                displayRegResult((Boolean)msg.obj);
+                break;
             }
         }
     };
@@ -336,6 +348,19 @@ public class ExLauncher extends Activity {
         mLlReg.setVisibility(reg ? View.GONE : View.VISIBLE);
         mRlMain.setVisibility(reg ? View.VISIBLE : View.GONE);
     }
+    
+    private void displayRegResult(boolean suc) {
+        if (suc){
+            // register successful, try to check lock status
+            Toast.makeText(this, R.string.register_ok, Toast.LENGTH_LONG).show();
+            displayLockStatus();
+            mLlReg.setVisibility(View.GONE);
+        } else {
+            mTvLock.setText(getString(R.string.register_fail));
+            mRlLock.setVisibility(View.VISIBLE);
+            mLlReg.setVisibility(View.GONE);
+        }
+    }
 
     private static final String EQUAL = "=";
     private static final String CONJUNCTION = "&";
@@ -350,6 +375,9 @@ public class ExLauncher extends Activity {
             String strCountry, String strCity) {
         String wifiMac = mSharedPreferences.getString(SAVED_WIFI_MAC, null);
         String ethMac = mSharedPreferences.getString(SAVED_ETH_MAC, null);
+
+//        wifiMac = "00116d063cfc";
+//        ethMac = "a0f4594776de";
 
         if (TextUtils.isEmpty(wifiMac) || TextUtils.isEmpty(ethMac)) {
             loge("[registerToServer] wifiMac or ethMac is empty!");
@@ -391,7 +419,7 @@ public class ExLauncher extends Activity {
         InputStream is = HttpRequest.getStreamFromUrl(regUrl);
 
         StringBuilder total = new StringBuilder();
-        
+
         if (is != null) {
             String line = "";
             BufferedReader rd = new BufferedReader(new InputStreamReader(is));
@@ -406,19 +434,10 @@ public class ExLauncher extends Activity {
 
         String result = total.toString();
         logd("[registerToServer] result : " + result);
-        if (!TextUtils.isEmpty(regUrl) && result.contains("success")) {
-            Toast.makeText(this, R.string.register_ok, Toast.LENGTH_LONG)
-                    .show();
-
-            // register successful, try to check lock status
-            displayLockStatus();
-            mLlReg.setVisibility(View.GONE);
-        } else {
-            loge("[registerToServer] error when registerring on " + regUrl);
-            mTvLock.setText(getString(R.string.register_fail));
-            mRlLock.setVisibility(View.VISIBLE);
-            mLlReg.setVisibility(View.GONE);
-        }
+        
+        boolean suc = !TextUtils.isEmpty(result) && result.contains("success");
+        Message m = mUiHandler.obtainMessage(MSG_UI_DISPLAY_REGISTER_RESULT, Boolean.valueOf(suc));
+        m.sendToTarget();
     }
 
     private void showErrorDailog(String errStr) {
@@ -434,90 +453,6 @@ public class ExLauncher extends Activity {
                     }
                 });
         builder.create().show();
-    }
-
-    private void showRegisterDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.register_info);
-
-        View view = this.getLayoutInflater().inflate(
-                R.layout.layout_dlg_register, null);
-        final EditText etEmail = (EditText) view.findViewById(R.id.et_email);
-        final EditText etPhone = (EditText) view.findViewById(R.id.et_phone);
-        final EditText etCity = (EditText) view.findViewById(R.id.et_city);
-        final Spinner spCountry = (Spinner) view
-                .findViewById(R.id.spinner_country);
-
-        String[] regCountry = getResources()
-                .getStringArray(R.array.reg_country);
-        mRegCountry = regCountry[0];
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, regCountry);
-        spCountry.setAdapter(adapter);
-        spCountry
-                .setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent,
-                            View view, int position, long id) {
-                        // TODO Auto-generated method stub
-                        mRegCountry = parent.getItemAtPosition(position)
-                                .toString();
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                        // TODO Auto-generated method stub
-
-                    }
-
-                });
-
-        Button btnReg = (Button) view.findViewById(R.id.btn_register);
-
-        btnReg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                if (!Patterns.EMAIL_ADDRESS.matcher(
-                        etEmail.getText().toString()).matches()) {
-                    showErrorDailog(ExLauncher.this
-                            .getString(R.string.error_email));
-                    return;
-                }
-
-                if (!Patterns.PHONE.matcher(etPhone.getText().toString())
-                        .matches()) {
-                    showErrorDailog(ExLauncher.this
-                            .getString(R.string.error_phone));
-                    return;
-                }
-
-                if (TextUtils.isEmpty(etCity.getText().toString())) {
-                    showErrorDailog(ExLauncher.this
-                            .getString(R.string.error_city));
-                    return;
-                }
-
-                registerToServer(etEmail.getText().toString(), etPhone
-                        .getText().toString(), mRegCountry, etCity.getText()
-                        .toString());
-                mRegisterDialog.dismiss();
-                mRegisterDialog = null;
-            }
-        });
-
-        builder.setView(view);
-        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                // TODO Auto-generated method stub
-                mRegisterDialog = null;
-            }
-        });
-
-        mRegisterDialog = builder.create();
-        mRegisterDialog.show();
     }
 
     public static void resetMsgStatusAndRefresh(boolean status) {
@@ -1592,7 +1527,7 @@ public class ExLauncher extends Activity {
         super.onResume();
         logd("[onResume]");
         displayLockStatus();
-//        checkRegisterStatus();
+        // checkRegisterStatus();
         displayBottomButtom();
         displayStatus();
         displayRightSide();
@@ -1824,9 +1759,7 @@ public class ExLauncher extends Activity {
                     return;
                 }
 
-                registerToServer(mEtEmail.getText().toString(), mEtPhone
-                        .getText().toString(), mRegCountry, mEtCity.getText()
-                        .toString());
+                mDataHandler.sendEmptyMessage(MSG_DATA_REGISTER);
             }
         });
     }

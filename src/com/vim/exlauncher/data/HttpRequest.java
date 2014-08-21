@@ -38,7 +38,7 @@ public class HttpRequest {
                 is = conn.getInputStream();
             }
         } catch (Exception e) {
-            Log.e(TAG, "[getStreamFromUrl] error when getting logo on "
+            Log.e(TAG, "[getStreamFromUrl] error when getting data on "
                     + strUrl);
             // e.printStackTrace();
             is = null;
